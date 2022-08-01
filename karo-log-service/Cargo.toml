@@ -1,5 +1,5 @@
 [package]
-name = "caro-log-service"
+name = "karo-log-service"
 version = "0.1.0"
 edition = "2021"
 

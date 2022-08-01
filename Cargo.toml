@@ -1,3 +1,3 @@
 [workspace]
 
-members = ["caro-log-service", "caro-log-lib"]
+members = ["karo-log-service", "karo-log-lib"]

@@ -1,2 +1,2 @@
-# caro-log
-Caro platform logging support
+# karo-log
+Karo platform logging support
