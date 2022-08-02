@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct LogMessage {
-    pid: u32,
-    message: String,
+    pub pid: u32,
+    pub message: String,
 }
 
 impl LogMessage {

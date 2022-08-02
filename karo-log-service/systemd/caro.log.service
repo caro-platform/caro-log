@@ -1,0 +1,11 @@
+[Unit]
+Description=Karo platform logging
+
+[Service]
+ExecStart=/usr/bin/karo-log-service
+StandardOutput=journal
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+Wants=caro.bus.hub.service
