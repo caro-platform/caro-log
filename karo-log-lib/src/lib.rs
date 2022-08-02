@@ -1,8 +1,4 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
-}
+pub mod logger;
+
+pub type Error = Box<dyn std::error::Error + Sync + Send>;
+pub type Result<T> = std::result::Result<T, Error>;
