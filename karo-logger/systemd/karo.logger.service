@@ -2,7 +2,7 @@
 Description=Karo platform logging
 
 [Service]
-ExecStart=/usr/bin/karo-log-service
+ExecStart=/usr/bin/karo-logger
 StandardOutput=journal
 Restart=always
 

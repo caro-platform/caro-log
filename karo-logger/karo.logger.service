@@ -1,0 +1,4 @@
+{
+    "exec": "/usr/bin/karo-logger",
+    "incoming_connections": ["**"]
+}

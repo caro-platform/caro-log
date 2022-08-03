@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use clap::{self, Parser};
+use log::*;
 use tokio::{
     fs::{File, OpenOptions},
     io::AsyncWriteExt,
@@ -12,18 +13,28 @@ use karo_bus_lib::Bus;
 use karo_log_common::{
     log_message::LogMessage, DEFAULT_LOG_LOCATION, LOGGING_METHOD_NAME, LOGGING_SERVICE_NAME,
 };
+use karo_log_lib::Logger;
+
 /// Karo bus monitor
 #[derive(Parser, Debug)]
 #[clap(version, about, long_about = None)]
 pub struct Args {
+    /// Log level: OFF, ERROR, WARN, INFO, DEBUG, TRACE
+    #[clap(short, long, value_parser, default_value_t = LevelFilter::Info)]
+    pub log_level: log::LevelFilter,
+
     /// Service to monitor
-    #[clap(short, long, value_parser, default_value_t = DEFAULT_LOG_LOCATION.into())]
+    #[clap(long, value_parser, default_value_t = DEFAULT_LOG_LOCATION.into())]
     pub log_location: String,
 }
 
 async fn handle_message(log_file: Arc<Mutex<File>>, message: LogMessage) {
-    let bytes = message.message.as_bytes();
-    if let Err(err) = log_file.lock().await.write_all(bytes).await {
+    let log_line = format!(
+        "{}: {} > {}\n",
+        message.level, message.target, message.message
+    );
+
+    if let Err(err) = log_file.lock().await.write_all(log_line.as_bytes()).await {
         eprintln!("Failed to write log message: {}", err.to_string())
     }
 }
@@ -33,6 +44,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Starting Karo logging service");
 
     let args = Args::parse();
+
+    let _ = Logger::new(args.log_level, true);
 
     let log_file = Arc::new(Mutex::new(
         OpenOptions::new()
@@ -55,9 +68,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     })
     .expect("Failed to register logging function");
 
-    println!("Succesfully started logging service. Listening for message");
+    info!("Succesfully started logging service. Listening for messages");
     let _ = tokio::signal::ctrl_c().await;
-    println!("Shutting down");
+    info!("Shutting down");
 
     Ok(())
 }

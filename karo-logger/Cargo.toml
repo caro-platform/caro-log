@@ -1,12 +1,14 @@
 [package]
-name = "karo-log-service"
+name = "karo-logger"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 clap = { version = "3.2", features = ["derive", "color"] }
+log = "0.4"
 tokio = { version = "1.20", features = ["macros", "rt", "fs"] }
 
 karo-bus-lib = { git = "https://github.com/karo-platform/karo-bus.git" }
 
 karo-log-common = { path = "../karo-log-common" }
+karo-log-lib = { path = "../karo-log-lib" }

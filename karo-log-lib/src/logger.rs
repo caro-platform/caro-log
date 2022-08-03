@@ -2,10 +2,7 @@ use std::process;
 
 use colored::Colorize;
 use log::{Level, LevelFilter, Log, Record};
-use tokio::sync::{
-    mpsc::{self, Receiver, Sender},
-    oneshot::{self, Receiver as OneReceiver},
-};
+use tokio::sync::mpsc::{self, Receiver, Sender};
 
 use karo_bus_lib::peer::Peer;
 
@@ -22,7 +19,7 @@ pub struct Logger {
 impl Logger {
     pub fn new(level: LevelFilter, log_to_stdout: bool) -> crate::Result<LoggerClient> {
         let (tx, rx) = mpsc::channel(64);
-        let (peer_tx, peer_rx) = oneshot::channel();
+        let (peer_tx, peer_rx) = mpsc::channel(1);
 
         let this = Self {
             pid: process::id(),
@@ -41,11 +38,12 @@ impl Logger {
     fn start_sending_task(
         &self,
         mut rx: Receiver<LogMessage>,
-        mut peer_rx: OneReceiver<Peer>,
+        mut peer_rx: Receiver<Peer>,
         log_to_stdout: bool,
     ) {
         tokio::spawn(async move {
             let mut logger_connection: Option<Peer> = None;
+            let mut peer_tx_closed = false;
 
             loop {
                 tokio::select! {
@@ -68,14 +66,17 @@ impl Logger {
                                 .call::<LogMessage, ()>(LOGGING_METHOD_NAME, &message)
                                 .await
                             {
-                                eprintln!("Failed to send logging message: {}", err.to_string());
+                                log::error!("Failed to send logging message: {}", err.to_string());
                             }
                         }
                     },
-                    peer = &mut peer_rx => {
-                        // If user just droms logger connector, we get an error here. Now we just ignore it
-                        if let Ok(peer) = peer {
+                    peer = peer_rx.recv(), if !peer_tx_closed => {
+                        // None means user already set the peer connection, or just dropped connector handle.
+                        // Both cases are valid and we just stop pooling it
+                        if let Some(peer) = peer {
                             logger_connection = Some(peer)
+                        } else {
+                            peer_tx_closed = true;
                         }
                     }
                 }
