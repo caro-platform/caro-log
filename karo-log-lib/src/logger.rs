@@ -64,12 +64,17 @@ impl Logger {
                         }
 
                         if logger_connection.is_some() {
-                            if let Err(err) = logger_connection.as_ref()
+                            // The function will return an error if disconnected
+                            // We'll log to stdout meanwhile and wait while reconneceted
+                            if let Err(_) = logger_connection.as_ref()
                                 .unwrap()
                                 .call::<LogMessage, ()>(LOGGING_METHOD_NAME, &message)
                                 .await
                             {
-                                log::error!("Failed to send logging message: {}", err.to_string());
+                                if !log_to_stdout {
+                                    print!("Offline message: ");
+                                    Self::log_to_stdout(&message);
+                                }
                             }
                         }
                     },
@@ -120,11 +125,9 @@ impl Log for Logger {
                 format!("{}", record.args()),
             );
 
-            if let Err(err) = self.tx.try_send(log_message) {
-                eprintln!(
-                    "Failed to send logging message into channel: {}",
-                    err.to_string()
-                );
+            if let Err(_) = self.tx.try_send(log_message.clone()) {
+                print!("Offline message: ");
+                Self::log_to_stdout(&log_message);
             }
         }
     }
