@@ -4,7 +4,7 @@ use colored::Colorize;
 use log::{Level, LevelFilter, Log, Record};
 use tokio::sync::mpsc::{self, Receiver, Sender};
 
-use karo_bus_lib::peer::Peer;
+use karo_bus_lib::simple_peer::SimplePeer;
 
 use karo_log_common::{log_message::LogMessage, LOGGING_METHOD_NAME};
 
@@ -38,11 +38,12 @@ impl Logger {
     fn start_sending_task(
         &self,
         mut rx: Receiver<LogMessage>,
-        mut peer_rx: Receiver<Peer>,
+        mut peer_rx: Receiver<(String, SimplePeer)>,
         log_to_stdout: bool,
     ) {
         tokio::spawn(async move {
-            let mut logger_connection: Option<Peer> = None;
+            let mut service_name: String = "Unknown".into();
+            let mut logger_connection: Option<SimplePeer> = None;
             let mut peer_tx_closed = false;
 
             loop {
@@ -55,7 +56,9 @@ impl Logger {
                             return;
                         }
 
-                        let message = message.unwrap();
+                        let mut message = message.unwrap();
+                        message.service_name = service_name.clone();
+
                         if log_to_stdout || logger_connection.is_none() {
                             Self::log_to_stdout(&message);
                         }
@@ -73,7 +76,8 @@ impl Logger {
                     peer = peer_rx.recv(), if !peer_tx_closed => {
                         // None means user already set the peer connection, or just dropped connector handle.
                         // Both cases are valid and we just stop pooling it
-                        if let Some(peer) = peer {
+                        if let Some((self_service_name, peer)) = peer {
+                            service_name = self_service_name;
                             logger_connection = Some(peer)
                         } else {
                             peer_tx_closed = true;

@@ -30,9 +30,11 @@ pub struct Args {
 
 async fn handle_message(log_file: Arc<Mutex<File>>, message: LogMessage) {
     let log_line = format!(
-        "{}: {} > {}\n",
-        message.level, message.target, message.message
+        "{}#{} [{}] {} > {}\n",
+        message.service_name, message.pid, message.level, message.target, message.message
     );
+
+    debug!("{}", log_line);
 
     if let Err(err) = log_file.lock().await.write_all(log_line.as_bytes()).await {
         eprintln!("Failed to write log message: {}", err.to_string())
