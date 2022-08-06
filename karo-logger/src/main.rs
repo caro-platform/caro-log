@@ -30,8 +30,13 @@ pub struct Args {
 
 async fn handle_message(log_file: Arc<Mutex<File>>, message: LogMessage) {
     let log_line = format!(
-        "{}#{} [{}] {} > {}\n",
-        message.service_name, message.pid, message.level, message.target, message.message
+        "<{}> {}#{} [{}] {} > {}\n",
+        message.timestamp.format("%d-%m-%Y %H:%M:%S:%.3f"),
+        message.service_name,
+        message.pid,
+        message.level,
+        message.target,
+        message.message
     );
 
     debug!("{}", log_line);
