@@ -1,19 +1,16 @@
-use std::sync::Arc;
+mod logger;
 
 use clap::{self, Parser};
 use log::*;
-use tokio::{
-    fs::{File, OpenOptions},
-    io::AsyncWriteExt,
-    sync::Mutex,
-};
 
 use karo_bus_lib::Bus;
 
 use karo_log_common::{
     log_message::LogMessage, DEFAULT_LOG_LOCATION, LOGGING_METHOD_NAME, LOGGING_SERVICE_NAME,
 };
-use karo_log_lib::Logger;
+use karo_log_lib::Logger as LibLogger;
+
+use logger::Logger;
 
 /// Karo bus monitor
 #[derive(Parser, Debug)]
@@ -28,49 +25,24 @@ pub struct Args {
     pub log_location: String,
 }
 
-async fn handle_message(log_file: Arc<Mutex<File>>, message: LogMessage) {
-    let log_line = format!(
-        "<{}> {}#{} [{}] {} > {}\n",
-        message.timestamp.format("%d-%m-%Y %H:%M:%S%.3f"),
-        message.service_name,
-        message.pid,
-        message.level,
-        message.target,
-        message.message
-    );
-
-    debug!("{}", log_line);
-
-    if let Err(err) = log_file.lock().await.write_all(log_line.as_bytes()).await {
-        eprintln!("Failed to write log message: {}", err.to_string())
-    }
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Starting Karo logging service");
 
     let args = Args::parse();
 
-    let _ = Logger::new(args.log_level, true);
+    let _ = LibLogger::new(args.log_level, true);
 
-    let log_file = Arc::new(Mutex::new(
-        OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .open(&args.log_location)
-            .await?,
-    ));
+    let logger = Logger::new(&args.log_location);
 
     let mut bus = Bus::register(LOGGING_SERVICE_NAME)
         .await
         .expect("Failed to register logging service");
 
     bus.register_method(LOGGING_METHOD_NAME, move |message: LogMessage| {
-        let log_file = log_file.clone();
-        async {
-            handle_message(log_file, message).await;
+        let mut logger = logger.clone();
+        async move {
+            logger.log_message(message);
         }
     })
     .expect("Failed to register logging function");
