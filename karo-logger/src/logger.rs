@@ -40,7 +40,6 @@ impl Logger {
     fn open_log_file(&mut self) {
         *self.log_file.lock().unwrap() = Some(
             OpenOptions::new()
-                .read(true)
                 .write(true)
                 .create(true)
                 .open(&self.args.log_location)

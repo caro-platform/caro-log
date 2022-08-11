@@ -31,7 +31,7 @@ impl Rotator {
                 .file_stem()
                 .unwrap_or(OsStr::new("karo_log"))
                 .to_string_lossy(),
-            time.format("_%Y_%m_%d_%H_%M_%S."),
+            time.format("%Y_%m_%d_%H_%M_%S"),
             file_path
                 .as_path()
                 .extension()
@@ -50,7 +50,7 @@ impl Rotator {
         format!("{}", rotated_file_path.to_string_lossy())
     }
 
-    fn remove_old_logs(logs_dir: &PathBuf, args: &Args) {
+    fn read_log_dir_files(logs_dir: &PathBuf) -> Vec<String> {
         let dir_iter = match logs_dir.read_dir() {
             Ok(dir_iter) => dir_iter,
             Err(err) => {
@@ -58,7 +58,7 @@ impl Rotator {
                     "Failed to list log dir: {}. Can't remove old logs",
                     err.to_string()
                 );
-                return;
+                return vec![];
             }
         };
 
@@ -78,8 +78,14 @@ impl Rotator {
             .collect();
 
         log_files.sort();
+        log_files
+    }
 
-        // Check if have somethig to delete
+    fn remove_old_logs(logs_dir: &PathBuf, args: &Args) {
+        let log_files = Self::read_log_dir_files(logs_dir);
+
+        // Check if have somethig to delete.
+        // Note we've just rotated original log file, so we only have rotated files in the dir
         if log_files.len() > args.keep_num_logs {
             let num_files_delete = log_files.len() - args.keep_num_logs;
 
