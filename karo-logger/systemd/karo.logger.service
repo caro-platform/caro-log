@@ -2,6 +2,7 @@
 Description=Karo platform logging
 
 [Service]
+ExecStartPre=-mkdir /var/log/karo
 ExecStart=/usr/bin/karo-logger
 StandardOutput=journal
 Restart=always
