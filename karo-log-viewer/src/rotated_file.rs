@@ -29,18 +29,18 @@ impl RotatedFile {
         }
     }
 
-    fn open_log_file(&mut self, direction: ShiftDirection) -> Option<()> {
+    pub fn rev(&mut self) {
+        if self.handle.is_none() {
+            self.open_log_file();
+        }
+
+        self.cursor_pos = self.file_len;
+    }
+
+    fn open_log_file(&mut self) -> Option<()> {
         self.handle = Some(FsFile::open(&self.file_path).ok()?);
 
         self.file_len = self.file_len()?;
-
-        // Reset cursor position
-        // If we want to shift down, set cursor pos to the beginning of the file, otherwise to the end
-        self.cursor_pos = if direction == ShiftDirection::Down {
-            0
-        } else {
-            self.file_len
-        };
 
         Some(())
     }
@@ -72,6 +72,16 @@ impl RotatedFile {
         }
     }
 
+    /// The function will use iterator to collect new deque and count how make bytes resulting
+    /// lines consist of
+    fn truncate_and_count(iter: impl Iterator<Item = String>) -> (VecDeque<String>, usize) {
+        iter.fold((VecDeque::new(), 0), |(mut lines_acc, len), l| {
+            let new_len = len + l.len() + 1; // \n
+            lines_acc.push_back(l);
+            (lines_acc, new_len)
+        })
+    }
+
     /// Split buffer into lines
     // This is a tricky one. We not only split into lines, but also eliminate partial lines, and
     // Update cursor position
@@ -80,10 +90,14 @@ impl RotatedFile {
         read_buf: String,
         mut chunk_start: u64,
         mut chunk_end: u64,
+        num_lines: usize,
         direction: ShiftDirection,
     ) -> Vec<String> {
         let first_partial_line = chunk_start != 0 && read_buf.find('\n').is_some();
-        let last_partial_line = chunk_end != self.file_len && read_buf.rfind('\n').is_some();
+        // Note, we have last partial lines only if going down
+        let last_partial_line = direction == ShiftDirection::Down
+            && chunk_end != self.file_len
+            && read_buf.rfind('\n').is_some();
 
         let mut lines: VecDeque<String> = read_buf.lines().map(|l| l.into()).collect();
 
@@ -107,19 +121,44 @@ impl RotatedFile {
             }
         }
 
-        // Update cursor position to the new newline
-        self.cursor_pos = match direction {
-            ShiftDirection::Up => chunk_start,
-            ShiftDirection::Down => chunk_end,
-        };
+        // Set cursor position at edge of the read chunk
+        // If we've read not enought lines, set cursor position at the end or beginnning of chunk
+        if lines.len() <= num_lines {
+            self.cursor_pos = match direction {
+                ShiftDirection::Down => chunk_end,
+                ShiftDirection::Up => chunk_start,
+            }
+        // Else drop extra lines and update cursor to be set to the edge of the lines we'll return
+        } else {
+            (lines, self.cursor_pos) = match direction {
+                // If reading downwards, take first N lines
+                ShiftDirection::Down => {
+                    let (trunkated_lines, total_bytes) =
+                        Self::truncate_and_count(lines.into_iter().take(num_lines));
+                    (trunkated_lines, chunk_start + total_bytes as u64)
+                }
+                // Otherwise last N lines
+                ShiftDirection::Up => {
+                    let lines_to_skip = lines.len() - num_lines;
 
-        debug!("New cursor position: {}", self.cursor_pos);
+                    let (trunkated_lines, total_bytes) =
+                        Self::truncate_and_count(lines.into_iter().skip(lines_to_skip));
+                    (trunkated_lines, chunk_end - total_bytes as u64)
+                }
+            };
+        }
+
+        debug!(
+            "Total lines read: {}. New cursor position: {}",
+            lines.len(),
+            self.cursor_pos
+        );
 
         lines.into_iter().collect()
     }
 
     /// Read lines inside the file chunk
-    fn read_lines(&mut self, direction: ShiftDirection) -> Vec<String> {
+    fn read_lines(&mut self, direction: ShiftDirection, num_lines: usize) -> Vec<String> {
         let (mut chunk_start, chunk_end) = self.get_chunk_to_read(direction);
         debug!("Reading chunk of bytes <{}, {}>", chunk_start, chunk_end);
 
@@ -130,7 +169,7 @@ impl RotatedFile {
             return vec![];
         }
 
-        // Shift left chunk start to identify if we have a beginning of the line
+        // Shift chunk start to the left, and chunk end to the right to identify if we have a beginning of the line,
         if chunk_start > 0 {
             chunk_start -= 1
         }
@@ -158,7 +197,7 @@ impl RotatedFile {
         }
 
         // Split read buffer into lines
-        self.split_buffer(read_buf, chunk_start, chunk_end, direction)
+        self.split_buffer(read_buf, chunk_start, chunk_end, num_lines, direction)
     }
 }
 
@@ -180,7 +219,7 @@ impl File for RotatedFile {
 
         // If handle is none we just opening this rotated file or returning from it's neighbour logs
         if self.handle.is_none() {
-            if self.open_log_file(direction).is_none() {
+            if self.open_log_file().is_none() {
                 warn!(
                     "Failed to open rotated file at '{}'",
                     self.file_path.display(),
@@ -191,7 +230,7 @@ impl File for RotatedFile {
 
         // Keep reading until get needed number of lines
         while window_size_lines > 0 {
-            let new_lines = self.read_lines(direction);
+            let new_lines = self.read_lines(direction, window_size_lines as usize);
 
             // No more lines to read in the file break the loop, return whatever we've read so far
             if new_lines.len() == 0 {
