@@ -5,6 +5,7 @@ use std::{
 };
 
 use chrono::Local;
+use karo_log_common::ROTATED_LOG_TIMESTAMP_FORMAT;
 
 use crate::args::Args;
 
@@ -31,7 +32,7 @@ impl Rotator {
                 .file_stem()
                 .unwrap_or(OsStr::new("karo_log"))
                 .to_string_lossy(),
-            time.format("%Y_%m_%d_%H_%M_%S"),
+            time.format(ROTATED_LOG_TIMESTAMP_FORMAT),
             file_path
                 .as_path()
                 .extension()

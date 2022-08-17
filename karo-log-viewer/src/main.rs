@@ -1,4 +1,6 @@
 pub mod file_trait;
+pub mod log_dir_entry;
+pub mod log_directory_reader;
 pub mod rotated_file;
 
 use std::{path::PathBuf, time::Duration};
