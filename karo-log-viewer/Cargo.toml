@@ -12,3 +12,7 @@ tokio = { version = "1.20", features = ["macros", "rt-multi-thread", "signal"] }
 
 karo-log-common = { path = "../karo-log-common" }
 karo-log-lib = { path = "../karo-log-lib" }
+
+[dev-dependencies]
+pretty_env_logger = "0.4"
+tempdir = "0.3"

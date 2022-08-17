@@ -1,5 +1,5 @@
 pub mod file_trait;
-pub mod log_dir_entry;
+pub mod log_directory_entry;
 pub mod log_directory_reader;
 pub mod rotated_file;
 

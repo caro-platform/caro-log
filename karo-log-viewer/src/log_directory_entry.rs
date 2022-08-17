@@ -1,10 +1,10 @@
 use std::cmp::Ordering;
 
-use chrono::{DateTime, FixedOffset};
+use chrono::NaiveDateTime;
 
 #[derive(Eq, PartialEq)]
 pub enum LogFileType {
-    Rotated(DateTime<FixedOffset>),
+    Rotated(NaiveDateTime),
     Live,
 }
 

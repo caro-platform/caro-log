@@ -1,17 +1,17 @@
 use std::path::PathBuf;
 
-use chrono::DateTime;
+use chrono::NaiveDateTime;
 use karo_log_common::ROTATED_LOG_TIMESTAMP_FORMAT;
 use log::{debug, error, warn};
 use regex::Regex;
 
-use crate::log_dir_entry::{LogFile, LogFileType};
+use crate::log_directory_entry::{LogFile, LogFileType};
 
 pub struct DirectoryReader;
 
 impl DirectoryReader {
     /// Read log directory to find all log files
-    pub fn read_dir_logs(log_location: String) -> Vec<LogFile> {
+    pub fn read_dir_logs(log_location: &str) -> Vec<LogFile> {
         let mut result = vec![];
 
         let log_path = PathBuf::from(log_location);
@@ -61,7 +61,7 @@ impl DirectoryReader {
                         debug!("Rotated log timestamp: {}", rotated_log_datetime);
 
                         // Parse rotation timestamp
-                        match DateTime::parse_from_str(
+                        match NaiveDateTime::parse_from_str(
                             rotated_log_datetime,
                             ROTATED_LOG_TIMESTAMP_FORMAT,
                         ) {
@@ -74,7 +74,10 @@ impl DirectoryReader {
                                 })
                             }
                             Err(_) => {
-                                error!("Failed to parse rotated log timestamp '{}'", log_file_name)
+                                error!(
+                                    "Failed to parse rotated log timestamp '{}'",
+                                    rotated_log_datetime
+                                )
                             }
                         }
                     }
@@ -102,7 +105,7 @@ impl DirectoryReader {
     /// The regex allows to parse rotated log timestamp
     fn get_rotated_log_regex(live_log_name: &str) -> Option<Regex> {
         if let Some((file_name, ext)) = live_log_name.rsplit_once('.') {
-            let rotate_file_regex = format!(r"{}_[^\.]+\.{}", file_name, ext);
+            let rotate_file_regex = format!(r"{}_([^\.]+)\.{}", file_name, ext);
 
             Regex::new(&rotate_file_regex).ok()
         } else {
