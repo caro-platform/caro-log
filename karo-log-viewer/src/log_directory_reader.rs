@@ -5,13 +5,13 @@ use karo_log_common::ROTATED_LOG_TIMESTAMP_FORMAT;
 use log::{debug, error, warn};
 use regex::Regex;
 
-use crate::log_directory_entry::{LogFile, LogFileType};
+use crate::log_directory_entry::{LogFileEntry, LogFileType};
 
 pub struct DirectoryReader;
 
 impl DirectoryReader {
     /// Read log directory to find all log files
-    pub fn read_dir_logs(log_location: &str) -> Vec<LogFile> {
+    pub fn read_dir_logs(log_location: &str) -> Vec<LogFileEntry> {
         let mut result = vec![];
 
         let log_path = PathBuf::from(log_location);
@@ -52,34 +52,12 @@ impl DirectoryReader {
                         continue;
                     }
 
-                    debug!("Potential rotated log file: {}", log_file_name);
-
-                    // Try to match filename with rotated log regex
-                    if let Some(caps) = rotated_log_regex.captures(&log_file_name) {
-                        let rotated_log_datetime = &caps[1];
-
-                        debug!("Rotated log timestamp: {}", rotated_log_datetime);
-
-                        // Parse rotation timestamp
-                        match NaiveDateTime::parse_from_str(
-                            rotated_log_datetime,
-                            ROTATED_LOG_TIMESTAMP_FORMAT,
-                        ) {
-                            Ok(ts) => {
-                                debug!("Succesfully parsed rotated log '{}'", log_file_name);
-
-                                result.push(LogFile {
-                                    log_file_name,
-                                    log_type: LogFileType::Rotated(ts),
-                                })
-                            }
-                            Err(_) => {
-                                error!(
-                                    "Failed to parse rotated log timestamp '{}'",
-                                    rotated_log_datetime
-                                )
-                            }
-                        }
+                    if let Some(ts) = Self::get_log_timestamp(&dir_entry.path(), &rotated_log_regex)
+                    {
+                        result.push(LogFileEntry {
+                            log_file_name,
+                            log_type: LogFileType::Rotated(ts),
+                        })
                     }
                 }
                 Err(err) => {
@@ -93,12 +71,46 @@ impl DirectoryReader {
         }
 
         result.sort();
-        result.push(LogFile {
+
+        result.push(LogFileEntry {
             log_file_name: live_log_name,
             log_type: LogFileType::Live,
         });
 
         result
+    }
+
+    fn get_log_timestamp(
+        path: &PathBuf,
+        rotated_log_timestamp_regex: &Regex,
+    ) -> Option<NaiveDateTime> {
+        let log_file_name = path.file_name().unwrap().to_string_lossy();
+
+        debug!("Found file in the log directory: {}", log_file_name);
+
+        // Try to match filename with rotated log regex
+        if let Some(caps) = rotated_log_timestamp_regex.captures(&log_file_name) {
+            let rotated_log_datetime = &caps[1];
+
+            debug!("Rotated log timestamp: {}", rotated_log_datetime);
+
+            // Parse rotation timestamp
+            match NaiveDateTime::parse_from_str(rotated_log_datetime, ROTATED_LOG_TIMESTAMP_FORMAT)
+            {
+                Ok(ts) => {
+                    debug!("Succesfully parsed rotated log '{}'", log_file_name);
+                    return Some(ts);
+                }
+                Err(_) => {
+                    error!(
+                        "Failed to parse rotated log timestamp '{}'",
+                        rotated_log_datetime
+                    );
+                }
+            }
+        }
+
+        None
     }
 
     /// Make rotated log regex out of the live log file name.

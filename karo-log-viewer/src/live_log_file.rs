@@ -7,19 +7,19 @@ use std::{
 
 use log::*;
 
-use crate::file_trait::{File, ShiftDirection};
+use crate::log_file_trait::{LogFile, ShiftDirection};
 
 // Chunk size which we read first and than split into lines
 const READ_CHUNK_SIZE_BYTES: u64 = 1_000;
 
-pub struct RotatedFile {
+pub struct LiveLogFile {
     file_path: PathBuf,
     handle: Option<FsFile>,
     cursor_pos: u64,
     file_len: u64,
 }
 
-impl RotatedFile {
+impl LiveLogFile {
     pub fn new(file_path: PathBuf) -> Self {
         Self {
             file_path,
@@ -201,7 +201,11 @@ impl RotatedFile {
     }
 }
 
-impl File for RotatedFile {
+impl LogFile for LiveLogFile {
+    fn file_path(&self) -> PathBuf {
+        self.file_path.clone()
+    }
+
     fn shift_and_read(
         &mut self,
         direction: ShiftDirection,

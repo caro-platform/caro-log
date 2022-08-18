@@ -9,12 +9,12 @@ pub enum LogFileType {
 }
 
 #[derive(Eq, PartialEq)]
-pub struct LogFile {
+pub struct LogFileEntry {
     pub log_file_name: String,
     pub log_type: LogFileType,
 }
 
-impl Ord for LogFile {
+impl Ord for LogFileEntry {
     fn cmp(&self, other: &Self) -> Ordering {
         match (&self.log_type, &other.log_type) {
             (LogFileType::Live, LogFileType::Live) => Ordering::Equal,
@@ -25,7 +25,7 @@ impl Ord for LogFile {
     }
 }
 
-impl PartialOrd for LogFile {
+impl PartialOrd for LogFileEntry {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
