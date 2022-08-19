@@ -17,6 +17,7 @@ pub struct LiveLogFile {
     handle: Option<FsFile>,
     cursor_pos: u64,
     file_len: u64,
+    lines: Vec<String>,
 }
 
 impl LiveLogFile {
@@ -26,6 +27,7 @@ impl LiveLogFile {
             handle: None,
             cursor_pos: 0,
             file_len: 0,
+            lines: vec![],
         }
     }
 
@@ -59,12 +61,12 @@ impl LiveLogFile {
     /// Clamps reading chunk inside the file
     fn get_chunk_to_read(&self, direction: ShiftDirection) -> (u64, u64) {
         match direction {
-            ShiftDirection::Down => {
+            ShiftDirection::Right => {
                 let left = self.cursor_pos;
                 let right = std::cmp::min(self.file_len, self.cursor_pos + READ_CHUNK_SIZE_BYTES);
                 (left, right)
             }
-            ShiftDirection::Up => {
+            ShiftDirection::Left => {
                 let left = std::cmp::max(0, self.cursor_pos as i64 - READ_CHUNK_SIZE_BYTES as i64);
                 let right = self.cursor_pos;
                 (left as u64, right)
@@ -95,7 +97,7 @@ impl LiveLogFile {
     ) -> Vec<String> {
         let first_partial_line = chunk_start != 0 && read_buf.find('\n').is_some();
         // Note, we have last partial lines only if going down
-        let last_partial_line = direction == ShiftDirection::Down
+        let last_partial_line = direction == ShiftDirection::Right
             && chunk_end != self.file_len
             && read_buf.rfind('\n').is_some();
 
@@ -125,20 +127,20 @@ impl LiveLogFile {
         // If we've read not enought lines, set cursor position at the end or beginnning of chunk
         if lines.len() <= num_lines {
             self.cursor_pos = match direction {
-                ShiftDirection::Down => chunk_end,
-                ShiftDirection::Up => chunk_start,
+                ShiftDirection::Right => chunk_end,
+                ShiftDirection::Left => chunk_start,
             }
         // Else drop extra lines and update cursor to be set to the edge of the lines we'll return
         } else {
             (lines, self.cursor_pos) = match direction {
                 // If reading downwards, take first N lines
-                ShiftDirection::Down => {
+                ShiftDirection::Right => {
                     let (trunkated_lines, total_bytes) =
                         Self::truncate_and_count(lines.into_iter().take(num_lines));
                     (trunkated_lines, chunk_start + total_bytes as u64)
                 }
                 // Otherwise last N lines
-                ShiftDirection::Up => {
+                ShiftDirection::Left => {
                     let lines_to_skip = lines.len() - num_lines;
 
                     let (trunkated_lines, total_bytes) =
@@ -206,11 +208,11 @@ impl LogFile for LiveLogFile {
         self.file_path.clone()
     }
 
-    fn shift_and_read(
-        &mut self,
-        direction: ShiftDirection,
-        window_size_lines: usize,
-    ) -> Vec<String> {
+    fn lines(&self) -> &Vec<String> {
+        &self.lines
+    }
+
+    fn shift_and_read(&mut self, direction: ShiftDirection, window_size_lines: usize) -> usize {
         // We'll substract number of read lines, so we want it signed
         let mut window_size_lines = window_size_lines as isize;
 
@@ -228,7 +230,7 @@ impl LogFile for LiveLogFile {
                     "Failed to open rotated file at '{}'",
                     self.file_path.display(),
                 );
-                return result;
+                return result.len();
             }
         }
 
@@ -259,6 +261,6 @@ impl LogFile for LiveLogFile {
             result.extend(new_lines.into_iter());
         }
 
-        result
+        result.len()
     }
 }

@@ -2,16 +2,13 @@ use std::{os::unix::prelude::MetadataExt, path::PathBuf};
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum ShiftDirection {
-    Up,
-    Down,
+    Left,
+    Right,
 }
 
 pub trait LogFile {
-    fn shift_and_read(
-        &mut self,
-        direction: ShiftDirection,
-        window_size_lines: usize,
-    ) -> Vec<String>;
+    fn shift_and_read(&mut self, direction: ShiftDirection, window_size_lines: usize) -> usize;
+    fn lines(&self) -> &Vec<String>;
 
     fn file_path(&self) -> PathBuf;
 
