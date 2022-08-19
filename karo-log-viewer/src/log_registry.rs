@@ -9,9 +9,9 @@ use crate::rotated_log_file::RotatedLogFile;
 
 /// Log files registry witch implements cross-file browsing
 pub struct LogRegistry {
-    rotated_log_files: VecDeque<Box<dyn LogFile>>,
+    pub rotated_log_files: VecDeque<Box<dyn LogFile>>,
     /// Currently visible window inside [log_files]
-    current_window: (usize, usize),
+    pub current_window: (usize, usize),
 }
 
 impl LogRegistry {

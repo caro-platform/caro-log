@@ -58,4 +58,42 @@ fn test_window() {
     assert_eq!(window.start_cursor(), 12);
     assert_eq!(window.end_cursor(), 12);
     assert_eq!(window.lines(), &VecDeque::new());
+
+    // [x, x, x]
+    window.rev(18);
+    assert_eq!(window_size, 0);
+    assert_eq!(window.start_cursor(), 18);
+    assert_eq!(window.end_cursor(), 18);
+    assert_eq!(window.lines(), &VecDeque::new());
+
+    // [x, x, 2]
+    window_size = window.shift(ShiftDirection::Left, 1, vec!["test2".into()]);
+
+    assert_eq!(window_size, 1);
+    assert_eq!(window.start_cursor(), 12);
+    assert_eq!(window.end_cursor(), 18);
+    assert_eq!(window.lines(), &VecDeque::from_iter(["test2".to_owned()]));
+
+    // [0, 1, 2]
+    window_size = window.shift(
+        ShiftDirection::Left,
+        0,
+        vec!["test0".into(), "test1".into()],
+    );
+
+    assert_eq!(window_size, 3);
+    assert_eq!(window.start_cursor(), 0);
+    assert_eq!(window.end_cursor(), 18);
+    assert_eq!(
+        window.lines(),
+        &VecDeque::from_iter(["test0".to_owned(), "test1".to_owned(), "test2".to_owned()])
+    );
+
+    // [2]
+    window_size = window.shift(ShiftDirection::Right, 2, vec![]);
+
+    assert_eq!(window_size, 1);
+    assert_eq!(window.start_cursor(), 12);
+    assert_eq!(window.end_cursor(), 18);
+    assert_eq!(window.lines(), &VecDeque::from_iter(["test2".to_owned()]));
 }

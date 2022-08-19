@@ -1,4 +1,4 @@
-use std::{os::unix::prelude::MetadataExt, path::PathBuf};
+use std::{collections::VecDeque, os::unix::prelude::MetadataExt, path::PathBuf};
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum ShiftDirection {
@@ -7,8 +7,13 @@ pub enum ShiftDirection {
 }
 
 pub trait LogFile {
-    fn shift_and_read(&mut self, direction: ShiftDirection, window_size_lines: usize) -> usize;
-    fn lines(&self) -> &Vec<String>;
+    fn shift_and_read(
+        &mut self,
+        direction: ShiftDirection,
+        window_size_lines: usize,
+        shift_len: usize,
+    ) -> usize;
+    fn lines(&self) -> &VecDeque<String>;
 
     fn file_path(&self) -> PathBuf;
 

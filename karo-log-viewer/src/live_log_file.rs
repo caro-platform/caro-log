@@ -17,7 +17,7 @@ pub struct LiveLogFile {
     handle: Option<FsFile>,
     cursor_pos: u64,
     file_len: u64,
-    lines: Vec<String>,
+    lines: VecDeque<String>,
 }
 
 impl LiveLogFile {
@@ -27,7 +27,7 @@ impl LiveLogFile {
             handle: None,
             cursor_pos: 0,
             file_len: 0,
-            lines: vec![],
+            lines: VecDeque::new(),
         }
     }
 
@@ -208,11 +208,16 @@ impl LogFile for LiveLogFile {
         self.file_path.clone()
     }
 
-    fn lines(&self) -> &Vec<String> {
+    fn lines(&self) -> &VecDeque<String> {
         &self.lines
     }
 
-    fn shift_and_read(&mut self, direction: ShiftDirection, window_size_lines: usize) -> usize {
+    fn shift_and_read(
+        &mut self,
+        direction: ShiftDirection,
+        window_size_lines: usize,
+        _shift_len: usize,
+    ) -> usize {
         // We'll substract number of read lines, so we want it signed
         let mut window_size_lines = window_size_lines as isize;
 
