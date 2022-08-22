@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, path::PathBuf};
 
 use chrono::NaiveDateTime;
 
@@ -11,6 +11,7 @@ pub enum LogFileType {
 #[derive(Eq, PartialEq)]
 pub struct LogFileEntry {
     pub log_file_name: String,
+    pub full_path: PathBuf,
     pub log_type: LogFileType,
 }
 

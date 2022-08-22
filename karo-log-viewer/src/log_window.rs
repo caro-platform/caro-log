@@ -24,6 +24,12 @@ impl LogWindow {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.start_cursor = 0;
+        self.end_cursor = 0;
+        self.lines = VecDeque::new();
+    }
+
     pub fn rev(&mut self, end_pos: u64) {
         self.start_cursor = end_pos;
         self.end_cursor = end_pos;
@@ -49,18 +55,21 @@ impl LogWindow {
     /// Shift window prepending lines if direction is Left, or appending otherwise.
     /// After appending lines strcture will shift window towards the direction of shift.
     /// If **append_size.len() < shift_len** window shrinks
-    /// **Returns** size of the new window
+    /// **Returns** size number of lines shifted
     pub fn shift(
         &mut self,
         direction: ShiftDirection,
         shift_len: usize,
         append_lines: Vec<String>,
     ) -> usize {
+        let mut total_shifted = 0;
+
         match direction {
             ShiftDirection::Left => {
                 for _ in 0..shift_len {
                     if let Some(line) = self.lines.pop_back() {
-                        self.end_cursor -= line.len() as u64 + 1 // \n
+                        self.end_cursor -= line.len() as u64 + 1; // \n
+                        total_shifted += 1
                     } else {
                         break;
                     }
@@ -74,7 +83,8 @@ impl LogWindow {
             ShiftDirection::Right => {
                 for _ in 0..shift_len {
                     if let Some(line) = self.lines.pop_front() {
-                        self.start_cursor += line.len() as u64 + 1 // \n
+                        self.start_cursor += line.len() as u64 + 1; // \n
+                        total_shifted += 1
                     } else {
                         break;
                     }
@@ -92,6 +102,6 @@ impl LogWindow {
             self.start_cursor, self.end_cursor
         );
 
-        self.lines.len()
+        total_shifted
     }
 }

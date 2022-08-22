@@ -55,7 +55,8 @@ impl DirectoryReader {
                     if let Some(ts) = Self::get_log_timestamp(&dir_entry.path(), &rotated_log_regex)
                     {
                         result.push(LogFileEntry {
-                            log_file_name,
+                            log_file_name: log_file_name.clone(),
+                            full_path: log_dir.join(log_file_name),
                             log_type: LogFileType::Rotated(ts),
                         })
                     }
@@ -74,6 +75,7 @@ impl DirectoryReader {
 
         result.push(LogFileEntry {
             log_file_name: live_log_name,
+            full_path: log_path,
             log_type: LogFileType::Live,
         });
 

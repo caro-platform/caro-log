@@ -39,14 +39,6 @@ impl RotatedLogFile {
         &self.timestamp
     }
 
-    pub fn rev(&mut self) {
-        if self.handle.is_none() {
-            self.open_log_file();
-        }
-
-        self.window.rev(self.file_len + 1); // phantom \n
-    }
-
     fn open_log_file(&mut self) -> Option<()> {
         self.handle = Some(FsFile::open(&self.file_path).ok()?);
 
@@ -179,12 +171,24 @@ impl LogFile for RotatedLogFile {
         self.window.lines()
     }
 
-    fn shift_and_read(
+    fn reset(&mut self) {
+        self.window.reset()
+    }
+
+    fn rev(&mut self) {
+        if self.handle.is_none() {
+            self.open_log_file();
+        }
+
+        self.window.rev(self.file_len + 1); // phantom \n
+    }
+
+    fn read_and_shift(
         &mut self,
         direction: ShiftDirection,
         window_size_lines: usize,
         shift_len: usize,
-    ) -> usize {
+    ) -> (usize, usize) {
         debug!(
             "Reading log file '{}' {:?}",
             self.file_path.display(),
@@ -199,11 +203,8 @@ impl LogFile for RotatedLogFile {
         // If handle is none we just opening this rotated file or returning from it's neighbour logs
         if self.handle.is_none() {
             if self.open_log_file().is_none() {
-                warn!(
-                    "Failed to open rotated file at '{}'",
-                    self.file_path.display(),
-                );
-                return 0;
+                warn!("Failed to open log file at '{}'", self.file_path.display(),);
+                return (0, 0);
             }
         }
 
@@ -242,8 +243,8 @@ impl LogFile for RotatedLogFile {
         }
 
         // Shift window to drop line we won't need anymore
-        self.window.shift(direction, shift_len, vec![]);
+        let lines_shifted = self.window.shift(direction, shift_len, vec![]);
 
-        self.window.len()
+        (self.window.len(), lines_shifted)
     }
 }
