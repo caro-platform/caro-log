@@ -68,7 +68,14 @@ impl LogRegistry {
                 windows_len - total_lines_read
             );
 
-            // Move corresponing cursor
+            // If we've read enough lines from the current file, cursor remains the same, otherwise...
+            if total_lines_read == windows_len {
+                debug!("Current file had enough lines to read. Stop reading");
+                break;
+            }
+
+            debug!("Shifting window edge to the {:?}", direction);
+            // ...Move corresponding cursor
             match direction {
                 ShiftDirection::Left => {
                     if self.current_window.0 == 0 {

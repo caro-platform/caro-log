@@ -166,6 +166,19 @@ impl RotatedLogFile {
         // Split read buffer into lines
         self.split_buffer(read_buf, chunk_start, chunk_end, num_lines, direction)
     }
+
+    fn shrink_window(&mut self, direction: ShiftDirection, num_lines: usize) {
+        debug!(
+            "Current window is too big. Shrinking it to the {:?} for {} lines",
+            direction, num_lines
+        );
+
+        // Actually direction of shrinking os opposite to expanding
+        match direction {
+            ShiftDirection::Left => self.window.shift(ShiftDirection::Right, num_lines, vec![]),
+            ShiftDirection::Right => self.window.shift(ShiftDirection::Left, num_lines, vec![]),
+        };
+    }
 }
 
 impl LogFile for RotatedLogFile {
@@ -205,6 +218,11 @@ impl LogFile for RotatedLogFile {
         let mut lines_to_read =
             (window_size_lines + shift_len) as isize - self.window.len() as isize;
         debug!("Going to read {} new lines", lines_to_read);
+
+        // If windows is bigger that we need, shrink it
+        if lines_to_read < 0 {
+            self.shrink_window(direction, -lines_to_read as usize);
+        }
 
         // If handle is none we just opening this rotated file or returning from it's neighbour logs
         if self.handle.is_none() {

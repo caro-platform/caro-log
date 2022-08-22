@@ -69,7 +69,7 @@ fn test_rotated_log() {
     rotated.read_and_shift(ShiftDirection::Right, 2, 0);
     assert_eq!(
         rotated.lines(),
-        &VecDeque::from_iter(["log1".to_owned(), "log2".to_owned(), "log3".to_owned()])
+        &VecDeque::from_iter(["log1".to_owned(), "log2".to_owned()])
     );
 
     // [x, 1, 2, 3, x]
@@ -96,6 +96,33 @@ fn test_rotated_log() {
     // [x, x, x, x, x]
     rotated.rev();
     assert_eq!(rotated.lines(), &VecDeque::from_iter([]));
+
+    // [x, 1, 2, 3, x]
+    rotated.read_and_shift(ShiftDirection::Left, 3, 1);
+    assert_eq!(
+        rotated.lines(),
+        &VecDeque::from_iter(["log1".to_owned(), "log2".to_owned(), "log3".to_owned()])
+    );
+
+    // [x, x, 2, 3, 4]
+    rotated.read_and_shift(ShiftDirection::Right, 3, 1);
+    assert_eq!(
+        rotated.lines(),
+        &VecDeque::from_iter(["log2".to_owned(), "log3".to_owned(), "log4".to_owned()])
+    );
+
+    // [0, 1, 2, 3, 4]
+    rotated.read_and_shift(ShiftDirection::Left, 5, 0);
+    assert_eq!(
+        rotated.lines(),
+        &VecDeque::from_iter([
+            "log0".to_owned(),
+            "log1".to_owned(),
+            "log2".to_owned(),
+            "log3".to_owned(),
+            "log4".to_owned()
+        ])
+    );
 
     // [x, 1, 2, 3, x]
     rotated.read_and_shift(ShiftDirection::Left, 3, 1);
