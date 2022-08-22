@@ -191,30 +191,10 @@ impl LogFile for RotatedLogFile {
             direction
         );
 
-        // Shift window to drop line we won't need anymore
-        self.window.shift(direction, shift_len, vec![]);
-
-        // Read num lines to extend window if needed or drop if shrinked
-        // Shrink window
-        let mut lines_to_read = if window_size_lines < self.window.len() {
-            debug!(
-                "Shrinking window to the {:?} for {} lines",
-                direction,
-                self.window.len() - window_size_lines
-            );
-
-            self.window
-                .shift(direction, self.window.len() - window_size_lines, vec![]);
-            return self.window.len();
-        // Extend
-        } else {
-            debug!(
-                "Going to read {} new lines",
-                window_size_lines - self.window.len()
-            );
-
-            (window_size_lines - self.window.len()) as isize
-        };
+        // Calculate number of rows to read. This is basically new windows size + shift
+        let mut lines_to_read =
+            (window_size_lines + shift_len) as isize - self.window.len() as isize;
+        debug!("Going to read {} new lines", lines_to_read);
 
         // If handle is none we just opening this rotated file or returning from it's neighbour logs
         if self.handle.is_none() {
@@ -260,6 +240,9 @@ impl LogFile for RotatedLogFile {
                 self.window.len()
             );
         }
+
+        // Shift window to drop line we won't need anymore
+        self.window.shift(direction, shift_len, vec![]);
 
         self.window.len()
     }
