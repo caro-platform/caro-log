@@ -174,11 +174,18 @@ impl LogRegistry {
     }
 
     pub fn write(&self, buffer: &mut dyn Write) {
+        let mut counter = 0;
         for i in self.current_window.0..=self.current_window.1 {
             for line in self.log_files[i].lines() {
+                if counter != 0 {
+                    let _ = buffer.write_char('\n');
+                }
+
                 if let Err(err) = buffer.write_str(line) {
                     warn!("Failed to write log into a writer {}", err.to_string());
                 }
+
+                counter += 1;
             }
         }
     }

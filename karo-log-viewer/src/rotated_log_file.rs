@@ -113,7 +113,13 @@ impl RotatedLogFile {
 
         // Drop extra lines
         match direction {
-            ShiftDirection::Left => lines.into_iter().skip(lines_len - num_lines).collect(),
+            ShiftDirection::Left => {
+                if lines_len > num_lines {
+                    lines.into_iter().skip(lines_len - num_lines).collect()
+                } else {
+                    lines.into()
+                }
+            }
             ShiftDirection::Right => lines.into_iter().take(num_lines).collect(),
         }
     }
