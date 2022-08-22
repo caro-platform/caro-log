@@ -48,7 +48,23 @@ impl LogRegistry {
     }
 
     fn extend(&mut self, direction: ShiftDirection, windows_len: usize) -> usize {
+        debug!(
+            "Extend start to the {:?}, Window size: {}. Cursor: {:?}",
+            direction, windows_len, self.current_window
+        );
+
         let mut total_lines_read = 0;
+
+        // We move end cursor to the beginning of the window and start reading logs
+        // movin away the cursor to create a new window
+        match direction {
+            ShiftDirection::Left => {
+                self.current_window.0 = self.current_window.1;
+            }
+            ShiftDirection::Right => {
+                self.current_window.1 = self.current_window.0;
+            }
+        };
 
         while total_lines_read < windows_len {
             let cursor_to_use = match direction {
@@ -57,8 +73,11 @@ impl LogRegistry {
             };
 
             // Read file trying to read as much lines as we need
-            let (file_lines_len, _) =
-                self.log_files[cursor_to_use].read_and_shift(direction, windows_len, 0);
+            let (file_lines_len, _) = self.log_files[cursor_to_use].read_and_shift(
+                direction,
+                windows_len - total_lines_read,
+                0,
+            );
 
             total_lines_read += file_lines_len;
             debug!(
@@ -74,8 +93,8 @@ impl LogRegistry {
                 break;
             }
 
-            debug!("Shifting window edge to the {:?}", direction);
-            // ...Move corresponding cursor
+            trace!("Extension shift window edge to the {:?}", direction);
+            // ...Move corresponding cursor to expand the window
             match direction {
                 ShiftDirection::Left => {
                     if self.current_window.0 == 0 {
@@ -100,80 +119,81 @@ impl LogRegistry {
                     }
                 }
             }
+
+            trace!("New cursor for extension: {:?}", self.current_window);
         }
 
         total_lines_read
     }
 
     pub fn shift(&mut self, direction: ShiftDirection, mut shift_len: usize, windows_len: usize) {
+        debug!(
+            "Shift start for {} lines. Window {:?}",
+            shift_len, self.current_window
+        );
+
         // First we shift files cursors to satisfy shift len, which means we shift a single
         // file if it's big enought, or shift multiple files, if we have several files inside a
         // visible area
         while shift_len > 0 {
-            match direction {
-                ShiftDirection::Left => {
-                    debug!(
-                        "Shifting '{}' log for {} lines",
-                        self.log_files[self.current_window.0].file_path().display(),
-                        shift_len
-                    );
+            let cursor_to_use = match direction {
+                ShiftDirection::Left => self.current_window.1,
+                ShiftDirection::Right => self.current_window.0,
+            };
 
-                    let (_, lines_shifted) = self.log_files[self.current_window.0].read_and_shift(
-                        direction,
-                        windows_len,
-                        shift_len,
-                    );
+            debug!(
+                "Shifting '{}' log for {} lines",
+                self.log_files[cursor_to_use].file_path().display(),
+                shift_len
+            );
 
-                    shift_len -= lines_shifted;
+            let (_, lines_shifted) =
+                self.log_files[cursor_to_use].read_and_shift(direction, windows_len, shift_len);
 
-                    // The file doesn't have enought lines to fill the viewport. Switch to the previous one
-                    if shift_len > 0 {
-                        debug!(
-                            "File has not enough lines to perform shift. Still {} to shift",
-                            shift_len
-                        );
+            shift_len -= lines_shifted;
+            debug!(
+                "Shifted for {} lines. Still {} to shift",
+                lines_shifted, shift_len
+            );
 
-                        if self.current_window.0 == 0 {
+            // The file doesn't have enought lines to fill the viewport. Switch to the previous one
+            if shift_len > 0 {
+                debug!(
+                    "File has not enough lines to perform shift. Still {} to shift",
+                    shift_len
+                );
+
+                match direction {
+                    ShiftDirection::Left => {
+                        if self.current_window.1 == 0 {
                             debug!("No more files to shift");
 
                             break;
                         } else {
-                            self.current_window.0 -= 1
+                            self.current_window.1 -= 1;
+
+                            // Push left cursor if needed
+                            self.current_window.0 =
+                                std::cmp::min(self.current_window.1, self.current_window.0)
                         }
                     }
-                }
-                ShiftDirection::Right => {
-                    debug!(
-                        "Shifting '{}' log for {} lines",
-                        self.log_files[self.current_window.1].file_path().display(),
-                        shift_len
-                    );
-
-                    let (_, lines_shifted) = self.log_files[self.current_window.1].read_and_shift(
-                        direction,
-                        windows_len,
-                        shift_len,
-                    );
-
-                    shift_len -= lines_shifted;
-
-                    // The file doesn't have enought lines to fill the viewport. Switch to the next one
-                    if shift_len > 0 {
-                        debug!(
-                            "File has not enough lines to perform shift. Still {} to shift",
-                            shift_len
-                        );
-
-                        if self.current_window.1 == self.log_files.len() - 1 {
+                    ShiftDirection::Right => {
+                        if self.current_window.0 == self.log_files.len() - 1 {
                             debug!("No more files to shift");
 
                             break;
                         } else {
-                            self.current_window.1 += 1
+                            self.current_window.0 += 1;
+
+                            // Push left cursor if needed
+                            self.current_window.1 =
+                                std::cmp::max(self.current_window.1, self.current_window.0)
                         }
                     }
                 }
             }
+
+            trace!("New cursor for shifting: {:?}", self.current_window);
         }
 
         // Read lines needed to fill the viewport
@@ -181,6 +201,8 @@ impl LogRegistry {
     }
 
     pub fn write(&self, buffer: &mut dyn Write) {
+        trace!("Writing files: {:?}", self.current_window);
+
         let mut counter = 0;
         for i in self.current_window.0..=self.current_window.1 {
             for line in self.log_files[i].lines() {

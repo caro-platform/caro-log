@@ -62,6 +62,12 @@ impl LogWindow {
         shift_len: usize,
         append_lines: Vec<String>,
     ) -> usize {
+        trace!(
+            "Starting shift log window for {} lines. meanwhile have {} read lines",
+            shift_len,
+            self.lines().len()
+        );
+
         let mut total_shifted = 0;
 
         match direction {
@@ -97,9 +103,10 @@ impl LogWindow {
             }
         }
 
-        debug!(
+        trace!(
             "New cursor position: <{}, {}>",
-            self.start_cursor, self.end_cursor
+            self.start_cursor,
+            self.end_cursor
         );
 
         total_shifted

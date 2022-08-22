@@ -127,7 +127,7 @@ impl RotatedLogFile {
     /// Read lines inside the file chunk
     fn read_lines(&mut self, direction: ShiftDirection, num_lines: usize) -> Vec<String> {
         let (mut chunk_start, chunk_end) = self.get_chunk_to_read(direction);
-        debug!("Reading chunk of bytes <{}, {}>", chunk_start, chunk_end);
+        trace!("Reading chunk of bytes <{}, {}>", chunk_start, chunk_end);
 
         assert!(chunk_start <= chunk_end);
 
@@ -168,9 +168,10 @@ impl RotatedLogFile {
     }
 
     fn shrink_window(&mut self, direction: ShiftDirection, num_lines: usize) {
-        debug!(
+        trace!(
             "Current window is too big. Shrinking it to the {:?} for {} lines",
-            direction, num_lines
+            direction,
+            num_lines
         );
 
         // Actually direction of shrinking os opposite to expanding
@@ -208,16 +209,18 @@ impl LogFile for RotatedLogFile {
         window_size_lines: usize,
         shift_len: usize,
     ) -> (usize, usize) {
-        debug!(
-            "Reading log file '{}' {:?}",
+        trace!(
+            "Reading log file '{}' {:?}. Window size: {} lines, and shift {} lines",
             self.file_path.display(),
-            direction
+            direction,
+            window_size_lines,
+            shift_len
         );
 
         // Calculate number of rows to read. This is basically new windows size + shift
         let mut lines_to_read =
             (window_size_lines + shift_len) as isize - self.window.len() as isize;
-        debug!("Going to read {} new lines", lines_to_read);
+        trace!("Going to read {} new lines", lines_to_read);
 
         // If windows is bigger that we need, shrink it
         if lines_to_read < 0 {
@@ -258,7 +261,7 @@ impl LogFile for RotatedLogFile {
             // Add newly readed lines to the window
             self.window.shift(direction, 0, new_lines);
 
-            debug!(
+            trace!(
                 "Read {} lines of log. {} to read. New window size: {}",
                 new_lines_size,
                 lines_to_read,
