@@ -1,7 +1,6 @@
 pub mod log_directory_entry;
 pub mod log_directory_reader;
 pub mod log_files;
-pub mod log_window;
 
 use clap::{self, Parser};
 use log::LevelFilter;

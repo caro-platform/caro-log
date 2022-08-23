@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use log::LevelFilter;
 
-use karo_log_viewer::{log_files::log_file_trait::ShiftDirection, log_window::LogWindow};
+use karo_log_viewer::log_files::{log_file_trait::ShiftDirection, log_window::LogWindow};
 
 #[test]
 fn test_window() {
