@@ -9,7 +9,7 @@ use chrono::NaiveDateTime;
 use log::*;
 
 use crate::{
-    log_file_trait::{LogFile, ShiftDirection},
+    log_files::log_file_trait::{LogFile, ShiftDirection},
     log_window::LogWindow,
 };
 

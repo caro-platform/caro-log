@@ -3,11 +3,13 @@ use std::fmt::Write;
 
 use log::*;
 
-use crate::live_log_file::LiveLogFile;
 use crate::log_directory_entry::LogFileType;
 use crate::log_directory_reader::DirectoryReader;
-use crate::log_file_trait::{LogFile, ShiftDirection};
-use crate::rotated_log_file::RotatedLogFile;
+use crate::log_files::{
+    live_log_file::LiveLogFile,
+    log_file_trait::{LogFile, ShiftDirection},
+    rotated_log_file::RotatedLogFile,
+};
 
 /// Log files registry witch implements cross-file browsing
 pub struct LogRegistry {

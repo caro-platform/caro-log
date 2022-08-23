@@ -2,7 +2,7 @@ use std::{collections::VecDeque, path::PathBuf};
 
 use chrono::NaiveDateTime;
 
-use crate::{
+use crate::log_files::{
     log_file_trait::{LogFile, ShiftDirection},
     rotated_log_file::RotatedLogFile,
 };

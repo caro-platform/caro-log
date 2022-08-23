@@ -1,7 +1,7 @@
 use std::{collections::VecDeque, fs::OpenOptions, io::Write, path::Path};
 
 use chrono::NaiveDateTime;
-use karo_log_viewer::{
+use karo_log_viewer::log_files::{
     log_file_trait::{LogFile, ShiftDirection},
     rotated_log_file::RotatedLogFile,
 };

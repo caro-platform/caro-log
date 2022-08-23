@@ -3,7 +3,7 @@ use std::{fs::OpenOptions, io::Write, path::Path};
 use log::LevelFilter;
 use tempdir::TempDir;
 
-use karo_log_viewer::{log_file_trait::ShiftDirection, log_registry::LogRegistry};
+use karo_log_viewer::{log_files::log_file_trait::ShiftDirection, log_registry::LogRegistry};
 
 fn write_log(log_file_path: &Path, num: usize) {
     let mut file = OpenOptions::new()
