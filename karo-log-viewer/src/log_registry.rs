@@ -134,6 +134,17 @@ impl LogRegistry {
             shift_len, self.current_window
         );
 
+        // Read lines needed to fill the viewport after shift
+        // Reading first and shifting afterwards allows us to not shift past the end of the
+        // edge files.
+        // 1. In case we have enough data, total lines read will be windows_size + shift_len
+        // 2. Otherwise we got less then that. Sometimes even less than a window size. In this case we don't shift
+        let total_lines_read = self.extend(direction, windows_len + shift_len);
+
+        // Shift in a way that we always have lines to fill the viewport
+        shift_len = total_lines_read.saturating_sub(windows_len);
+        trace!("Resulting shift len: {}", shift_len);
+
         // First we shift files cursors to satisfy shift len, which means we shift a single
         // file if it's big enought, or shift multiple files, if we have several files inside a
         // visible area
@@ -197,9 +208,6 @@ impl LogRegistry {
 
             trace!("New cursor for shifting: {:?}", self.current_window);
         }
-
-        // Read lines needed to fill the viewport
-        self.extend(direction, windows_len);
     }
 
     pub fn write(&self, buffer: &mut dyn Write) {

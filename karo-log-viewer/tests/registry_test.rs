@@ -66,11 +66,11 @@ fn test_single_file_registry() {
     registry.write(&mut buffer);
     assert_eq!(buffer, "log01\nlog02\nlog03");
 
-    // [0, 1, x, x, x]
+    // [0, 1, 2, x, x]
     registry.shift(ShiftDirection::Left, 2, WINDOW_SIZE);
     buffer.clear();
     registry.write(&mut buffer);
-    assert_eq!(buffer, "log00\nlog01");
+    assert_eq!(buffer, "log00\nlog01\nlog02");
 
     // [x, 1, 2, 3, x]
     registry.shift(ShiftDirection::Right, 1, WINDOW_SIZE);
@@ -80,7 +80,7 @@ fn test_single_file_registry() {
 }
 
 #[test]
-fn test_two_files_registry() {
+fn test_multiple_files_registry() {
     const WINDOW_SIZE: usize = 5;
 
     let _ = pretty_env_logger::formatted_builder()
@@ -142,15 +142,15 @@ fn test_two_files_registry() {
     registry.write(&mut buffer);
     assert_eq!(buffer, "log22\nlog23\nlog24\nlog10\nlog11");
 
-    // [0, 1, x, x, x][..][..]
+    // [0, 1, 2, 3, 4][..][..]
     registry.shift(ShiftDirection::Left, 5, WINDOW_SIZE);
     buffer.clear();
     registry.write(&mut buffer);
-    assert_eq!(buffer, "log20\nlog21");
+    assert_eq!(buffer, "log20\nlog21\nlog22\nlog23\nlog24");
 
     // [..][..][x, x, 2, 3, 4]
     registry.shift(ShiftDirection::Right, 12, WINDOW_SIZE);
     buffer.clear();
     registry.write(&mut buffer);
-    assert_eq!(buffer, "log02\nlog03\nlog04");
+    assert_eq!(buffer, "log00\nlog01\nlog02\nlog03\nlog04");
 }
