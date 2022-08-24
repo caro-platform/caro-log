@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 use std::fmt::Write;
+use std::io::Write as IoWrite;
 
 use log::*;
 
@@ -222,6 +223,26 @@ impl LogRegistry {
 
                 if let Err(err) = buffer.write_str(line) {
                     warn!("Failed to write log into a writer {}", err.to_string());
+                }
+
+                counter += 1;
+            }
+        }
+    }
+
+    pub fn write_io(&self, buffer: &mut dyn IoWrite) {
+        trace!("Writing files: {:?}", self.current_window);
+
+        let mut counter = 0;
+        for i in self.current_window.0..=self.current_window.1 {
+            for line in self.log_files[i].lines() {
+                if counter != 0 {
+                    let test: String = "\n\r".into();
+                    let _ = buffer.write(test.as_bytes());
+                }
+
+                if let Err(err) = buffer.write(line.as_bytes()) {
+                    eprintln!("Failed to write log into a writer {}", err.to_string());
                 }
 
                 counter += 1;

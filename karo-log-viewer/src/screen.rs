@@ -5,11 +5,11 @@ use termion::{
     screen::{AlternateScreen, ToAlternateScreen, ToMainScreen},
 };
 
-pub struct Screens {
+pub struct Screen {
     alt_screen: AlternateScreen<RawTerminal<Stdout>>,
 }
 
-impl Screens {
+impl Screen {
     pub fn new() -> Self {
         let mut alt_screen = AlternateScreen::from(stdout().into_raw_mode().unwrap());
 
@@ -44,7 +44,7 @@ impl Screens {
     }
 }
 
-impl Drop for Screens {
+impl Drop for Screen {
     fn drop(&mut self) {
         let _ = write!(self.alt_screen, "{}{}", ToMainScreen, termion::cursor::Show);
     }

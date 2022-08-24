@@ -1,14 +1,16 @@
 pub mod log_directory_entry;
 pub mod log_directory_reader;
 pub mod log_files;
-pub mod screens;
+pub mod screen;
 
-use std::io::{stdin, Write};
+use std::io::stdin;
 
 use clap::{self, Parser};
+use karo_log_viewer::{log_files::log_file_trait::ShiftDirection, log_registry::LogRegistry};
 use log::LevelFilter;
 
 use karo_log_common::DEFAULT_LOG_LOCATION;
+use screen::Screen;
 use termion::{event::Key, input::TermRead};
 
 /// Karo log viewer
@@ -24,18 +26,46 @@ pub struct Args {
     pub log_location: String,
 }
 
-fn main() {
-    let _args = Args::parse();
+fn render(
+    screen: &mut Screen,
+    registry: &mut LogRegistry,
+    direction: ShiftDirection,
+    shift: usize,
+) {
+    let (_, h) = Screen::size();
+    registry.shift(direction, shift, h as usize);
+    registry.write_io(&mut screen.write());
+}
 
-    let mut screens = screens::Screens::new();
-    let mut counter = 0;
+fn main() {
+    let args = Args::parse();
+
+    let mut screen = Screen::new();
+    let mut registry = LogRegistry::new(&args.log_location);
+
+    render(&mut screen, &mut registry, ShiftDirection::Left, 0);
 
     for c in stdin().keys() {
         match c.unwrap() {
             Key::Char('q') => break,
             Key::Up => {
-                write!(screens.write(), "{}", counter).unwrap();
-                counter += 1;
+                render(&mut screen, &mut registry, ShiftDirection::Left, 1);
+            }
+            Key::Down => {
+                render(&mut screen, &mut registry, ShiftDirection::Right, 1);
+            }
+            Key::PageUp => {
+                let (_, h) = Screen::size();
+                render(&mut screen, &mut registry, ShiftDirection::Left, h as usize);
+            }
+            Key::PageDown => {
+                let (_, h) = Screen::size();
+                render(
+                    &mut screen,
+                    &mut registry,
+                    ShiftDirection::Right,
+                    h as usize,
+                );
             }
             _ => {}
         }

@@ -99,7 +99,27 @@ impl RotatedLogFile {
             && chunk_end != self.file_len
             && read_buf.rfind('\n').is_some();
 
+        let has_newline_at_eof = chunk_end == self.file_len + 1
+            && !read_buf.is_empty()
+            && read_buf.chars().last().unwrap() == '\n';
+
+        trace!(
+            "First partial: {:?}. Last partial: {:?}. Newline at EOF: {:?}",
+            first_partial_line,
+            last_partial_line,
+            has_newline_at_eof
+        );
+
+        // Not using **lines()**, because it drops last newline
+        // We need the newline at the end of the file, but we drop it otherwise
         let mut lines: VecDeque<String> = read_buf.lines().map(|l| l.into()).collect();
+
+        // If has a newline at the end of the file, we want to keep it
+        if has_newline_at_eof {
+            lines.push_back(String::new())
+        }
+
+        trace!("Read {} line in a chunk: {:?}", lines.len(), lines);
 
         if first_partial_line {
             lines.pop_front();
