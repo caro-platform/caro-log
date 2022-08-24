@@ -3,16 +3,13 @@ pub mod log_directory_reader;
 pub mod log_files;
 pub mod screens;
 
-use std::io::stdin;
+use std::io::{stdin, Write};
 
 use clap::{self, Parser};
 use log::LevelFilter;
 
 use karo_log_common::DEFAULT_LOG_LOCATION;
-use termion::{
-    event::{Event, Key},
-    input::TermRead,
-};
+use termion::{event::Key, input::TermRead};
 
 /// Karo log viewer
 #[derive(Parser, Debug, Clone)]
@@ -33,12 +30,11 @@ fn main() {
     let mut screens = screens::Screens::new();
     let mut counter = 0;
 
-    for e in stdin().events() {
-        match e.unwrap() {
-            Event::Key(Key::Char('q')) => break,
-            Event::Key(Key::Up) => {
+    for c in stdin().keys() {
+        match c.unwrap() {
+            Key::Char('q') => break,
+            Key::Up => {
                 write!(screens.write(), "{}", counter).unwrap();
-                screens.switch();
                 counter += 1;
             }
             _ => {}

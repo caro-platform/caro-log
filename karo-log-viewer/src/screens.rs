@@ -1,55 +1,36 @@
-use std::{
-    io::{stdout, Stdout, Write},
-    ops::Not,
+use std::io::{stdout, Stdout, Write};
+
+use termion::{
+    raw::{IntoRawMode, RawTerminal},
+    screen::{AlternateScreen, ToAlternateScreen, ToMainScreen},
 };
 
-use termion::screen::{AlternateScreen, ToAlternateScreen, ToMainScreen};
-
-#[derive(Clone, Copy)]
-enum ActiveScreen {
-    Main,
-    Alternate,
-}
-
-impl Not for ActiveScreen {
-    type Output = Self;
-
-    fn not(self) -> Self::Output {
-        match self {
-            ActiveScreen::Main => ActiveScreen::Alternate,
-            ActiveScreen::Alternate => ActiveScreen::Main,
-        }
-    }
-}
-
 pub struct Screens {
-    active: ActiveScreen,
-    main_screen: Stdout,
-    alt_screen: AlternateScreen<Stdout>,
+    alt_screen: AlternateScreen<RawTerminal<Stdout>>,
 }
 
 impl Screens {
     pub fn new() -> Self {
-        Self {
-            active: ActiveScreen::Main,
-            main_screen: stdout(),
-            alt_screen: AlternateScreen::from(stdout()),
+        let mut alt_screen = AlternateScreen::from(stdout().into_raw_mode().unwrap());
+
+        if let Err(err) = write!(alt_screen, "{}{}", termion::cursor::Hide, ToAlternateScreen) {
+            eprintln!("Failed to switch to alternate screen: {}", err.to_string());
         }
+
+        if let Err(err) = alt_screen.flush() {
+            eprint!("Failed to flush alternate screen: {}", err.to_string())
+        }
+
+        Self { alt_screen }
     }
 
-    pub fn height() -> u16 {
-        termion::terminal_size().map(|(_w, h)| h).unwrap_or(20)
+    pub fn size() -> (u16, u16) {
+        termion::terminal_size().unwrap_or((80, 20))
     }
 
-    pub fn write(&mut self) -> &mut dyn Write {
-        // Retun non-visible screen
-        let result = match self.active {
-            ActiveScreen::Main => &mut self.alt_screen,
-            ActiveScreen::Alternate => &mut self.main_screen,
-        };
-
+    pub fn write<'a>(&'a mut self) -> WriteHandle<'a> {
         if let Err(err) = write!(
-            result,
+            self.alt_screen,
             "{}{}",
             termion::clear::All,
             termion::cursor::Goto(1, 1)
@@ -57,20 +38,36 @@ impl Screens {
             eprintln!("Failed to clear alternate screen: {}", err.to_string());
         }
 
-        result
+        WriteHandle {
+            screen: &mut self.alt_screen,
+        }
+    }
+}
+
+impl Drop for Screens {
+    fn drop(&mut self) {
+        let _ = write!(self.alt_screen, "{}{}", ToMainScreen, termion::cursor::Show);
+    }
+}
+
+pub struct WriteHandle<'a> {
+    pub screen: &'a mut AlternateScreen<RawTerminal<Stdout>>,
+}
+
+impl<'a> Write for WriteHandle<'a> {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.screen.write(buf)
     }
 
-    pub fn switch(&mut self) {
-        let result = match self.active {
-            ActiveScreen::Main => write!(self.alt_screen, "{}", ToAlternateScreen),
-            ActiveScreen::Alternate => write!(self.alt_screen, "{}", ToMainScreen),
-        }
-        .and_then(|_| self.alt_screen.flush());
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.screen.flush()
+    }
+}
 
-        if let Err(err) = result {
-            eprintln!("Failed to swap screens: {}", err.to_string())
-        } else {
-            self.active = !self.active;
+impl<'a> Drop for WriteHandle<'a> {
+    fn drop(&mut self) {
+        if let Err(err) = self.screen.flush() {
+            eprint!("Failed to flush screen: {}", err.to_string())
         }
     }
 }
