@@ -93,15 +93,22 @@ impl RotatedLogFile {
         num_lines: usize,
         direction: ShiftDirection,
     ) -> Vec<String> {
+        if read_buf.is_empty() {
+            return vec![];
+        }
+
         let first_partial_line = chunk_start != 0 && read_buf.find('\n').is_some();
         // Note, we have last partial lines only if going down
         let last_partial_line = direction == ShiftDirection::Right
             && chunk_end != self.file_len
             && read_buf.rfind('\n').is_some();
 
-        let has_newline_at_eof = chunk_end == self.file_len + 1
-            && !read_buf.is_empty()
-            && read_buf.chars().last().unwrap() == '\n';
+        // This `self.file_len + 1` is because we set window end cursor to that value.
+        // When we reverse file cursors, we don't actually know if we have a newline at the end
+        // of the file, but log window assumes newlines at the end of each line, so this +1 should be here.
+        // I hope one day to rework this, but that's how it is now
+        let has_newline_at_eof =
+            chunk_end == self.file_len + 1 && read_buf.chars().last().unwrap() == '\n';
 
         trace!(
             "First partial: {:?}. Last partial: {:?}. Newline at EOF: {:?}",
