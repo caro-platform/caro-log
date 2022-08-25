@@ -1,21 +1,21 @@
 use std::collections::HashMap;
 
-use palette::{FromColor, Hsl, Srgb};
-use rand::{rngs::SmallRng, RngCore, SeedableRng};
+use palette::{FromColor, Hsv, Srgb};
 use termion::color;
 
 const LIGHT_GREY: color::Rgb = color::Rgb(120, 120, 120);
+const ROTATION_ANGLE: f32 = 55.;
 
 pub struct Colorizer {
     service_colors: HashMap<String, color::Rgb>,
-    rng: SmallRng,
+    color_rotator: f32,
 }
 
 impl Colorizer {
     pub fn new() -> Self {
         Self {
             service_colors: HashMap::new(),
-            rng: SmallRng::from_entropy(),
+            color_rotator: 0.,
         }
     }
 
@@ -83,8 +83,9 @@ impl Colorizer {
     }
 
     fn randomize_service_color(&mut self) -> color::Rgb {
-        let hue = self.rng.next_u32() % 360;
-        let random_hsl = Hsl::new(hue as f32, 0.8, 0.4);
+        let random_hsl = Hsv::new(self.color_rotator, 0.8, 0.9);
+        self.color_rotator = (self.color_rotator + ROTATION_ANGLE) % 360.;
+
         let random_rgb = Srgb::from_color(random_hsl);
 
         color::Rgb(
