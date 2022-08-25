@@ -1,3 +1,4 @@
+pub mod colorizer;
 pub mod log_directory_entry;
 pub mod log_directory_reader;
 pub mod log_files;
@@ -6,7 +7,9 @@ pub mod screen;
 use std::io::stdin;
 
 use clap::{self, Parser};
-use karo_log_viewer::{log_files::log_file_trait::ShiftDirection, log_registry::LogRegistry};
+use karo_log_viewer::{
+    colorizer::Colorizer, log_files::log_file_trait::ShiftDirection, log_registry::LogRegistry,
+};
 use log::LevelFilter;
 
 use karo_log_common::DEFAULT_LOG_LOCATION;
@@ -29,12 +32,13 @@ pub struct Args {
 fn render(
     screen: &mut Screen,
     registry: &mut LogRegistry,
+    colorizer: &mut Colorizer,
     direction: ShiftDirection,
     shift: usize,
 ) {
     let (_, h) = Screen::size();
-    registry.shift(direction, shift, h as usize);
-    registry.write_io(&mut screen.write());
+    registry.shift(direction, shift, h as usize - 2);
+    registry.write_io(&mut screen.write(), colorizer);
 }
 
 fn main() {
@@ -42,27 +46,53 @@ fn main() {
 
     let mut screen = Screen::new();
     let mut registry = LogRegistry::new(&args.log_location);
+    let mut colorizer = Colorizer::new();
 
-    render(&mut screen, &mut registry, ShiftDirection::Left, 0);
+    render(
+        &mut screen,
+        &mut registry,
+        &mut colorizer,
+        ShiftDirection::Left,
+        0,
+    );
 
     for c in stdin().keys() {
         match c.unwrap() {
             Key::Char('q') => break,
             Key::Up => {
-                render(&mut screen, &mut registry, ShiftDirection::Left, 1);
+                render(
+                    &mut screen,
+                    &mut registry,
+                    &mut colorizer,
+                    ShiftDirection::Left,
+                    1,
+                );
             }
             Key::Down => {
-                render(&mut screen, &mut registry, ShiftDirection::Right, 1);
+                render(
+                    &mut screen,
+                    &mut registry,
+                    &mut colorizer,
+                    ShiftDirection::Right,
+                    1,
+                );
             }
             Key::PageUp => {
                 let (_, h) = Screen::size();
-                render(&mut screen, &mut registry, ShiftDirection::Left, h as usize);
+                render(
+                    &mut screen,
+                    &mut registry,
+                    &mut colorizer,
+                    ShiftDirection::Left,
+                    h as usize,
+                );
             }
             Key::PageDown => {
                 let (_, h) = Screen::size();
                 render(
                     &mut screen,
                     &mut registry,
+                    &mut colorizer,
                     ShiftDirection::Right,
                     h as usize,
                 );

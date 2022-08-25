@@ -3,7 +3,9 @@ use std::fmt::Write;
 use std::io::Write as IoWrite;
 
 use log::*;
+use termion::{color, style};
 
+use crate::colorizer::Colorizer;
 use crate::log_directory_entry::LogFileType;
 use crate::log_directory_reader::DirectoryReader;
 use crate::log_files::{
@@ -232,7 +234,7 @@ impl LogRegistry {
         }
     }
 
-    pub fn write_io(&self, buffer: &mut dyn IoWrite) {
+    pub fn write_io(&self, buffer: &mut dyn IoWrite, colorizer: &mut Colorizer) {
         trace!("Writing files: {:?}", self.current_window);
 
         for i in self.current_window.0..=self.current_window.1 {
@@ -240,9 +242,26 @@ impl LogRegistry {
                 continue;
             }
 
+            let _ = buffer.write_fmt(format_args!(
+                "Log file: {}{}{}{}{}\n\r",
+                style::Bold,
+                color::Fg(color::LightWhite),
+                self.log_files[i]
+                    .file_path()
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy(),
+                style::Reset,
+                color::Fg(color::Reset)
+            ));
+
             for line in self.log_files[i].lines() {
-                if let Err(err) = buffer.write(line.as_bytes()) {
+                let colored_string = colorizer.colorize(line);
+
+                if let Err(err) = buffer.write(colored_string.as_bytes()) {
                     eprintln!("Failed to write log into a writer {}", err.to_string());
+                } else {
+                    let _ = buffer.write("\r".as_bytes());
                 }
             }
 

@@ -7,6 +7,8 @@ edition = "2021"
 chrono = "0.4"
 clap = { version = "3.2", features = ["derive", "color"] }
 log = "0.4"
+palette = "0.6"
+rand = { version = "0.8", features = ["small_rng"] }
 regex = "1.6"
 termion = "1.5"
 
