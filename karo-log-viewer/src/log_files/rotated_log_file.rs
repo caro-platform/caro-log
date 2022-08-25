@@ -97,34 +97,19 @@ impl RotatedLogFile {
             return vec![];
         }
 
-        let first_partial_line = chunk_start != 0 && read_buf.find('\n').is_some();
-        // Note, we have last partial lines only if going down
-        let last_partial_line = direction == ShiftDirection::Right
-            && chunk_end != self.file_len
-            && read_buf.rfind('\n').is_some();
-
-        // This `self.file_len + 1` is because we set window end cursor to that value.
-        // When we reverse file cursors, we don't actually know if we have a newline at the end
-        // of the file, but log window assumes newlines at the end of each line, so this +1 should be here.
-        // I hope one day to rework this, but that's how it is now
-        let has_newline_at_eof =
-            chunk_end == self.file_len + 1 && read_buf.chars().last().unwrap() == '\n';
+        // Note: Window cursors always point at the edges of the lines. So, we have partial lines
+        // only in the direction of the shift
+        let first_partial_line = direction == ShiftDirection::Left && chunk_start != 0;
+        let last_partial_line = direction == ShiftDirection::Right && chunk_end != self.file_len;
 
         trace!(
-            "First partial: {:?}. Last partial: {:?}. Newline at EOF: {:?}",
+            "First partial: {:?}. Last partial: {:?}",
             first_partial_line,
             last_partial_line,
-            has_newline_at_eof
         );
 
-        // Not using **lines()**, because it drops last newline
-        // We need the newline at the end of the file, but we drop it otherwise
-        let mut lines: VecDeque<String> = read_buf.lines().map(|l| l.into()).collect();
-
-        // If has a newline at the end of the file, we want to keep it
-        if has_newline_at_eof {
-            lines.push_back(String::new())
-        }
+        let mut lines: VecDeque<String> =
+            read_buf.split_inclusive('\n').map(|l| l.into()).collect();
 
         trace!("Read {} line in a chunk: {:?}", lines.len(), lines);
 
@@ -153,7 +138,7 @@ impl RotatedLogFile {
 
     /// Read lines inside the file chunk
     fn read_lines(&mut self, direction: ShiftDirection, num_lines: usize) -> Vec<String> {
-        let (mut chunk_start, chunk_end) = self.get_chunk_to_read(direction);
+        let (chunk_start, chunk_end) = self.get_chunk_to_read(direction);
         trace!("Reading chunk of bytes <{}, {}>", chunk_start, chunk_end);
 
         assert!(chunk_start <= chunk_end);
@@ -161,11 +146,6 @@ impl RotatedLogFile {
         // No more data to read
         if chunk_start == chunk_end {
             return vec![];
-        }
-
-        // Shift chunk start to the left, and chunk end to the right to identify if we have a beginning of the line,
-        if chunk_start > 0 {
-            chunk_start -= 1
         }
 
         if self.handle.is_none() {
@@ -227,7 +207,7 @@ impl LogFile for RotatedLogFile {
             self.open_log_file();
         }
 
-        self.window.rev(self.file_len + 1); // phantom \n
+        self.window.rev(self.file_len);
     }
 
     fn read_and_shift(

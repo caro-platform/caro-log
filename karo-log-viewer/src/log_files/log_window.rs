@@ -74,7 +74,7 @@ impl LogWindow {
             ShiftDirection::Left => {
                 for _ in 0..shift_len {
                     if let Some(line) = self.lines.pop_back() {
-                        self.end_cursor -= line.len() as u64 + 1; // \n
+                        self.end_cursor -= line.len() as u64; // \n
                         total_shifted += 1
                     } else {
                         break;
@@ -82,14 +82,14 @@ impl LogWindow {
                 }
 
                 for aline in append_lines.into_iter().rev() {
-                    self.start_cursor -= aline.len() as u64 + 1;
+                    self.start_cursor -= aline.len() as u64;
                     self.lines.push_front(aline);
                 }
             }
             ShiftDirection::Right => {
                 for _ in 0..shift_len {
                     if let Some(line) = self.lines.pop_front() {
-                        self.start_cursor += line.len() as u64 + 1; // \n
+                        self.start_cursor += line.len() as u64; // \n
                         total_shifted += 1
                     } else {
                         break;
@@ -97,7 +97,7 @@ impl LogWindow {
                 }
 
                 for aline in append_lines.into_iter() {
-                    self.end_cursor += aline.len() as u64 + 1;
+                    self.end_cursor += aline.len() as u64;
                     self.lines.push_back(aline);
                 }
             }
