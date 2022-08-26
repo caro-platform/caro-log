@@ -18,6 +18,8 @@ impl LoggerClient {
     pub async fn connect(self, bus: &mut Bus) -> crate::Result<()> {
         let peer = bus.simple_connect(LOGGING_SERVICE_NAME).await?;
 
+        //bus.register_method(SET_LOG_LEVEL_METHOD_NAME, |level: LevelFilter| {});
+
         self.peer_connection_tx
             .send((bus.service_name(), peer))
             .await

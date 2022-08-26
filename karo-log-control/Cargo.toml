@@ -1,0 +1,12 @@
+[package]
+name = "karo-log-control"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.20", features = ["macros", "rt"] }
+log = "0.4"
+
+karo-bus-lib = { git = "https://github.com/karo-platform/karo-bus.git" }
+
+karo-log-common = { path = "../karo-log-common" }

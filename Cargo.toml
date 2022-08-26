@@ -1,3 +1,9 @@
 [workspace]
 
-members = ["karo-logger", "karo-log-lib", "karo-log-common", "karo-log-viewer"]
+members = [
+    "karo-logger",
+    "karo-log-lib",
+    "karo-log-control",
+    "karo-log-common",
+    "karo-log-viewer",
+]
