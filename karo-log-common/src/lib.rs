@@ -1,6 +1,6 @@
 pub mod log_message;
 
-pub const CONTROL_SERVICE_NAME: &str = "karo.log.control";
+pub const LOG_CONTROL_SERVICE_NAME: &str = "karo.log.control";
 pub const SET_LOG_LEVEL_METHOD_NAME: &str = "!set_log_level";
 
 pub const LOGGING_SERVICE_NAME: &str = "karo.logger";

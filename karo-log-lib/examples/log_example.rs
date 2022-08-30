@@ -7,7 +7,7 @@ use karo_log_lib::Logger;
 
 #[tokio::main]
 async fn main() {
-    let log_connector = Logger::new(LevelFilter::Trace, false).unwrap();
+    let log_connector = Logger::new(LevelFilter::Debug, false).unwrap();
 
     error!("Error message");
     warn!("Warning message");
