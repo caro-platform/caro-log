@@ -30,6 +30,8 @@ impl LoggerClient {
                 if let Err(err) = level_tx.send(level).await {
                     warn!("Failed to send level change message: {}", err.to_string())
                 }
+
+                ()
             }
         })?;
 
