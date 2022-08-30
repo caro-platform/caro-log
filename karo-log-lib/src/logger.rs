@@ -86,6 +86,10 @@ impl Logger {
                         }
                     },
                     Some(level) = level_rx.recv() => {
+                        log::info!(
+                            "Got new log level from the log control: {}", level
+                        );
+
                         *log_level.write().unwrap() = level;
                     },
                     peer = peer_rx.recv(), if !peer_tx_closed => {

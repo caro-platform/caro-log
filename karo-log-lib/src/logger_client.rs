@@ -25,6 +25,7 @@ impl LoggerClient {
         let level_tx = self.level_tx.clone();
         bus.register_method(SET_LOG_LEVEL_METHOD_NAME, move |level: LevelFilter| {
             let level_tx = level_tx.clone();
+
             async move {
                 if let Err(err) = level_tx.send(level).await {
                     warn!("Failed to send level change message: {}", err.to_string())
