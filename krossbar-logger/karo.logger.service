@@ -1,0 +1,4 @@
+{
+    "exec": "/usr/bin/krossbar-logger",
+    "incoming_connections": ["**"]
+}

@@ -1,0 +1,14 @@
+[package]
+name = "krossbar-log-control"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "3.2", features = ["derive", "color"] }
+tokio = { version = "1.20", features = ["macros", "rt"] }
+log = "0.4"
+
+krossbar-bus-lib = { git = "https://github.com/krossbar-platform/krossbar-bus.git" }
+
+krossbar-log-common = { path = "../krossbar-log-common" }
+krossbar-log-lib = { path = "../krossbar-log-lib" }

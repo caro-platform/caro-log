@@ -1,0 +1,12 @@
+[Unit]
+Description=Krossbar platform logging
+
+[Service]
+ExecStartPre=-mkdir /var/log/krossbar
+ExecStart=/usr/bin/krossbar-logger
+StandardOutput=journal
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+Wants=caro.bus.hub.service
