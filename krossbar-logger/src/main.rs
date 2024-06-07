@@ -20,8 +20,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args = args::Args::parse();
 
-    let _ = LibLogger::new(args.log_level, true);
-
     let mut bus = Bus::register(LOGGING_SERVICE_NAME)
         .await
         .expect("Failed to register logging service");

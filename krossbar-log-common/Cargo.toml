@@ -11,8 +11,8 @@ homepage = "https://krossbar.rs"
 description = """
 Krossbar log common library
 """
-categories = ["debugging"]
-keywords = ["log", "debugging"]
+categories = ["development-tools"]
+keywords = ["log", "debugging", "development-tools"]
 
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
