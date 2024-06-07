@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-    # "krossbar-logger",
+    "krossbar-logger",
     # "krossbar-log-lib",
     # "krossbar-log-control",
     "krossbar-log-common",
