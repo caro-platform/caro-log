@@ -1,0 +1,55 @@
+[tasks.format]
+install_crate = "rustfmt"
+command = "cargo"
+args = ["fmt", "--", "--emit=files"]
+
+[tasks.clean]
+command = "cargo"
+args = ["clean"]
+
+[tasks.build]
+command = "cargo"
+args = ["build"]
+
+[tasks.build-release]
+command = "cargo"
+args = ["build", "--release"]
+
+[tasks.test]
+command = "cargo"
+args = ["nextest", "run"]
+
+[tasks.new-build]
+dependencies = ["clean", "build"]
+
+[tasks.readme]
+workspace = false
+command = "../scripts/gen_readme.sh"
+args = ["."]
+
+[tasks.install]
+workspace = false
+command = "../scripts/install.sh"
+args = [
+    "-b",
+    "krossbar-logger",
+    "-d",
+    "systemd/krossbar-logger.service",
+    "-s",
+    "krossbar.logger.service",
+]
+dependencies = ["build"]
+
+[tasks.install-release]
+workspace = false
+command = "../scripts/install.sh"
+args = [
+    "--release",
+    "-b",
+    "krossbar-logger",
+    "-d",
+    "systemd/krossbar-logger.service",
+    "-s",
+    "krossbar.logger.service",
+]
+dependencies = ["build-release"]
