@@ -2,6 +2,7 @@ mod args;
 mod client;
 mod logger;
 mod rotator;
+mod self_logger;
 mod writer;
 
 use clap::Parser;
@@ -10,9 +11,10 @@ use log::*;
 use krossbar_log_common::{log_message::LogMessage, DEFAULT_LOGGER_SOCKET_PATH};
 
 use logger::Logger;
+use tokio::net::unix;
 
 pub struct LogEvent {
-    pub pid: i32,
+    pub pid: unix::pid_t,
     pub service_name: String,
     pub message: LogMessage,
 }
@@ -23,14 +25,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args = args::Args::parse();
 
-    tokio::spawn(async move {
-        let logger = Logger::new(args, DEFAULT_LOGGER_SOCKET_PATH.into());
-        logger.run().await
-    });
-
+    // tokio::spawn(async move {
+    let logger = Logger::new(args, DEFAULT_LOGGER_SOCKET_PATH.into());
     info!("Succesfully started logging service. Listening for messages");
-    let _ = tokio::signal::ctrl_c().await;
+
+    logger.run().await;
+
     info!("Shutting down");
+    // });
+
+    // let _ = tokio::signal::ctrl_c().await;
 
     Ok(())
 }

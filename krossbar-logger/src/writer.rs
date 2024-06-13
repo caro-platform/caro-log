@@ -6,8 +6,6 @@ use std::{
     path::PathBuf,
 };
 
-use log::*;
-
 use crate::rotator::Rotator;
 
 pub struct Writer {
@@ -32,15 +30,17 @@ impl Writer {
         this
     }
 
-    fn open_log_file(&mut self) -> File {
-        OpenOptions::new()
-            .write(true)
-            .create(true)
-            .open(&self.log_location)
-            .expect(&format!(
-                "Failed to open log file at {:?}",
-                &self.log_location
-            ))
+    fn open_log_file(&mut self) {
+        self.log_file = Some(
+            OpenOptions::new()
+                .write(true)
+                .create(true)
+                .open(&self.log_location)
+                .expect(&format!(
+                    "Failed to open log file at {:?}",
+                    &self.log_location
+                )),
+        );
     }
 
     fn close_log_file(&mut self) {
@@ -60,8 +60,6 @@ impl Writer {
 
         // New current log len
         self.current_file_num_bytes += log_line.len() as u64;
-
-        debug!("{}", log_line);
 
         match self.log_file {
             Some(ref mut log_file) => {

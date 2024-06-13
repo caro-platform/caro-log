@@ -10,7 +10,7 @@ use futures::{
     Future, StreamExt as _,
 };
 
-use log::{debug, info, warn};
+use log::{debug, info, set_boxed_logger, warn};
 use tokio::{
     net::{
         unix::{self, UCred},
@@ -23,7 +23,7 @@ use krossbar_bus_common::protocols::hub::{Message as HubMessage, HUB_REGISTER_ME
 use krossbar_rpc::{request::RpcRequest, rpc::Rpc, writer::RpcWriter, Error, Result};
 use krossbar_state_machine::Machine;
 
-use crate::{args::Args, client::Client, writer::Writer, LogEvent};
+use crate::{args::Args, client::Client, self_logger::SelfLogger, writer::Writer, LogEvent};
 
 const CHANNEL_SIZE: usize = 100;
 
@@ -45,6 +45,13 @@ impl Logger {
         tasks.push(Box::pin(pending()));
 
         let (log_sender, log_receiver) = channel(CHANNEL_SIZE);
+
+        set_boxed_logger(Box::new(SelfLogger::new(
+            args.log_level,
+            log_sender.clone(),
+        )))
+        .map(|()| log::set_max_level(args.log_level))
+        .unwrap();
 
         Self {
             tasks,
