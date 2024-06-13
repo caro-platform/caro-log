@@ -37,7 +37,7 @@ krossbar-rpc = "0.5.5"
 krossbar-state-machine = "0.5.3"
 
 krossbar-bus-lib = "0.5.6"
-krossbar-log-common = { version = "0.5.0", path = "../krossbar-log-common" }
+krossbar-log-common = "0.5.1"
 
 [dev-dependencies]
 tempdir = "0.3.7"
