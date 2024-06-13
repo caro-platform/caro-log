@@ -3,10 +3,17 @@ name = "krossbar-logger"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "krossbar_logger_lib"
+path = "src/lib.rs"
+
 [dependencies]
-clap = { version = "3.2", features = ["derive", "color"] }
+bson = "2.10"
+clap = { version = "4.5", features = ["derive", "color"] }
+futures = "0.3.30"
 log = "0.4"
-tokio = { version = "1.20", features = [
+pretty_env_logger = "0.5.0"
+tokio = { version = "1.37", features = [
     "macros",
     "rt-multi-thread",
     "fs",
@@ -14,9 +21,13 @@ tokio = { version = "1.20", features = [
 ] }
 chrono = "0.4"
 
+krossbar-bus-common = "0.5.0"
+krossbar-rpc = "0.5.5"
+krossbar-state-machine = "0.5.3"
+
 krossbar-bus-lib = "0.5.6"
-krossbar-log-common = "0.5.0"
+krossbar-log-common = { versopn = "0.5.0", path = "../krossbar-log-common" }
 
 [dev-dependencies]
 tempdir = "0.3.7"
-tokio = { version = "1.19", features = ["fs", "signal"] }
+tokio = { version = "1.37", features = ["fs", "signal"] }

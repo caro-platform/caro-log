@@ -8,7 +8,7 @@ use std::{
 use log::LevelFilter;
 use tempdir::TempDir;
 
-use krossbar_logger::{args::Args, rotator::Rotator};
+use krossbar_logger_lib::{args::Args, rotator::Rotator};
 
 fn make_args(log_dir: &TempDir) -> Args {
     let log_location: String = log_dir
@@ -24,7 +24,7 @@ fn make_args(log_dir: &TempDir) -> Args {
         log_location,
         num_bytes_rotate: u64::MAX,
         // Keep single rotated file
-        keep_num_logs: 1,
+        keep_num_files: 1,
     }
 }
 
@@ -77,7 +77,7 @@ async fn test_rotator() {
     assert_eq!(&read_log_content(&args.log_location), "Log0");
 
     // First rotate
-    Rotator::rotate(&args);
+    Rotator::new(args.keep_num_files, PathBuf::from(&args.log_location)).rotate();
 
     write_log_message("Log1", &args.log_location);
 
@@ -93,7 +93,7 @@ async fn test_rotator() {
     // Sleep to make different names
     std::thread::sleep(Duration::from_secs(1));
     // Second rotate
-    Rotator::rotate(&args);
+    Rotator::new(args.keep_num_files, PathBuf::from(&args.log_location)).rotate();
 
     write_log_message("Log2", &args.log_location);
 

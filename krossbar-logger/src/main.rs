@@ -1,18 +1,21 @@
 mod args;
+mod client;
 mod logger;
 mod rotator;
+mod writer;
 
 use clap::Parser;
 use log::*;
 
-use krossbar_bus_lib::Bus;
-
-use krossbar_log_common::{log_message::LogMessage, LOGGING_METHOD_NAME, LOGGING_SERVICE_NAME};
-use krossbar_log_lib::Logger as LibLogger;
+use krossbar_log_common::{log_message::LogMessage, DEFAULT_LOGGER_SOCKET_PATH};
 
 use logger::Logger;
 
-const LOG_ROTATED_SIGNAL: &str = "log_rotated";
+pub struct LogEvent {
+    pub pid: i32,
+    pub service_name: String,
+    pub message: LogMessage,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -20,21 +23,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args = args::Args::parse();
 
-    let mut bus = Bus::register(LOGGING_SERVICE_NAME)
-        .await
-        .expect("Failed to register logging service");
-
-    let rotated_signal = bus.register_signal::<String>(LOG_ROTATED_SIGNAL).unwrap();
-
-    let logger = Logger::new(&args, rotated_signal);
-
-    bus.register_method(LOGGING_METHOD_NAME, move |message: LogMessage| {
-        let mut logger = logger.clone();
-        async move {
-            logger.log_message(message);
-        }
-    })
-    .expect("Failed to register logging function");
+    tokio::spawn(async move {
+        let logger = Logger::new(args, DEFAULT_LOGGER_SOCKET_PATH.into());
+        logger.run().await
+    });
 
     info!("Succesfully started logging service. Listening for messages");
     let _ = tokio::signal::ctrl_c().await;

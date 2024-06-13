@@ -7,17 +7,23 @@ use std::{
 use chrono::Local;
 use krossbar_log_common::ROTATED_LOG_TIMESTAMP_FORMAT;
 
-use crate::args::Args;
-
-pub struct Rotator;
+pub struct Rotator {
+    keep_num_files: usize,
+    log_location: PathBuf,
+}
 
 impl Rotator {
-    pub fn rotate(args: &Args) -> String {
+    pub fn new(keep_num_files: usize, log_location: PathBuf) -> Self {
+        Self {
+            keep_num_files,
+            log_location,
+        }
+    }
+
+    pub fn rotate(&self) -> String {
         let time = Local::now();
 
-        let file_path = PathBuf::from(&args.log_location);
-
-        let logs_dir = match file_path.as_path().parent() {
+        let logs_dir = match self.log_location.parent() {
             Some(log_dir) => log_dir.to_path_buf(),
             _ => {
                 eprintln!("Failed to extract log dir from log file path");
@@ -27,13 +33,13 @@ impl Rotator {
 
         let rotated_file_name = format!(
             "{}_{}.{}",
-            file_path
+            self.log_location
                 .as_path()
                 .file_stem()
                 .unwrap_or(OsStr::new("krossbar_log"))
                 .to_string_lossy(),
             time.format(ROTATED_LOG_TIMESTAMP_FORMAT),
-            file_path
+            self.log_location
                 .as_path()
                 .extension()
                 .unwrap_or(OsStr::new("log"))
@@ -42,11 +48,11 @@ impl Rotator {
 
         let rotated_file_path = logs_dir.join(rotated_file_name);
 
-        if let Err(err) = rename(file_path, rotated_file_path.clone()) {
+        if let Err(err) = rename(self.log_location.clone(), rotated_file_path.clone()) {
             eprintln!("Failed to rotate log file: {}", err.to_string())
         }
 
-        Self::remove_old_logs(&logs_dir, args);
+        self.remove_old_logs(&logs_dir);
 
         format!("{}", rotated_file_path.to_string_lossy())
     }
@@ -82,13 +88,13 @@ impl Rotator {
         log_files
     }
 
-    fn remove_old_logs(logs_dir: &PathBuf, args: &Args) {
+    fn remove_old_logs(&self, logs_dir: &PathBuf) {
         let log_files = Self::read_log_dir_files(logs_dir);
 
         // Check if have somethig to delete.
         // Note we've just rotated original log file, so we only have rotated files in the dir
-        if log_files.len() > args.keep_num_logs {
-            let num_files_delete = log_files.len() - args.keep_num_logs;
+        if log_files.len() > self.keep_num_files {
+            let num_files_delete = log_files.len() - self.keep_num_files;
 
             log_files
                 .into_iter()
