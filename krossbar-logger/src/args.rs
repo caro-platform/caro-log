@@ -7,7 +7,7 @@ use krossbar_log_common::DEFAULT_LOG_LOCATION;
 #[derive(Parser, Debug, Clone)]
 #[clap(version, about, long_about = None)]
 pub struct Args {
-    /// Log level: OFF, ERROR, WARN, INFO, DEBUG, TRACE
+    /// Logger self log level: OFF, ERROR, WARN, INFO, DEBUG, TRACE
     #[clap(short, long, default_value_t = LevelFilter::Debug)]
     pub log_level: log::LevelFilter,
 
