@@ -25,6 +25,7 @@ mod args;
 mod client;
 mod logger;
 mod rotator;
+#[cfg(not(feature = "disable-self-logger"))]
 mod self_logger;
 mod writer;
 

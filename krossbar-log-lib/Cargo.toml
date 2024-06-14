@@ -4,13 +4,20 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+chrono = "0.4"
 colored = "2.1"
+futures = "0.3"
 log = { version = "0.4", features = ["std", "release_max_level_debug"] }
-tokio = { version = "1.38", features = ["net", "time"] }
+tokio = { version = "1.38", features = ["net", "rt"] }
 
-krossbar-bus-common = "0.5.0"
 krossbar-common-rpc = "0.5.6"
-krossbar-log-common = "0.5.1"
+krossbar-log-common = "0.5.2"
 
 [dev-dependencies]
+krossbar-logger = { path = "../krossbar-logger", features = [
+    "disable-self-logger",
+] }
+rstest = "0.21"
+tempdir = "0.3.7"
 tokio = { version = "1.38", features = ["full"] }
+tokio-util = "0.7.11"

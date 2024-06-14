@@ -1,4 +1,4 @@
 {
-    "exec": "/data/krossbar/*",
+    "exec": "/usr/local/bin/log_example",
     "incoming_connections": ["**"]
 }

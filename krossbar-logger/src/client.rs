@@ -4,7 +4,7 @@ use tokio::net::unix;
 
 use krossbar_rpc::{rpc::Rpc, Error};
 
-use krossbar_log_common::{log_message::LogMessage, LOGGING_METHOD_NAME};
+use krossbar_log_common::{log_message::LogMessage, LOG_METHOD_NAME};
 
 use crate::LogEvent;
 
@@ -35,7 +35,7 @@ impl Client {
         loop {
             match self.rpc.poll().await {
                 Some(mut request) => {
-                    if request.endpoint() != LOGGING_METHOD_NAME {
+                    if request.endpoint() != LOG_METHOD_NAME {
                         request
                             .respond::<()>(Err(Error::InternalError(format!(
                                 "Expected log from a client. Got {}",

@@ -10,7 +10,8 @@ use futures::{
     Future, StreamExt as _,
 };
 
-use log::{debug, info, set_boxed_logger, warn};
+use krossbar_log_common::REGISTER_METHOD_NAME;
+use log::{debug, info, warn};
 use tokio::{
     net::{
         unix::{self, UCred},
@@ -19,11 +20,15 @@ use tokio::{
     select,
 };
 
-use krossbar_bus_common::protocols::hub::{Message as HubMessage, HUB_REGISTER_METHOD};
 use krossbar_rpc::{request::RpcRequest, rpc::Rpc, writer::RpcWriter, Error, Result};
 use krossbar_state_machine::Machine;
 
-use crate::{args::Args, client::Client, self_logger::SelfLogger, writer::Writer, LogEvent};
+use crate::{args::Args, client::Client, writer::Writer, LogEvent};
+
+#[cfg(not(feature = "disable-self-logger"))]
+use crate::self_logger::SelfLogger;
+#[cfg(not(feature = "disable-self-logger"))]
+use log::set_boxed_logger;
 
 const CHANNEL_SIZE: usize = 100;
 
@@ -46,6 +51,7 @@ impl Logger {
 
         let (log_sender, log_receiver) = channel(CHANNEL_SIZE);
 
+        #[cfg(not(feature = "disable-self-logger"))]
         set_boxed_logger(Box::new(SelfLogger::new(
             args.log_level,
             log_sender.clone(),
@@ -154,7 +160,7 @@ impl Logger {
         // Authorize the client
         let service_name = match rpc.poll().await {
             Some(mut request) => {
-                if request.endpoint() != HUB_REGISTER_METHOD {
+                if request.endpoint() != REGISTER_METHOD_NAME {
                     request
                         .respond::<()>(Err(Error::InternalError(format!(
                             "Expected registration call from a client. Got {}",
@@ -167,8 +173,8 @@ impl Logger {
                     // Valid call message
                     krossbar_rpc::request::Body::Call(bson) => {
                         // Valid Auth message
-                        match bson::from_bson::<HubMessage>(bson) {
-                            Ok(HubMessage::Register { service_name }) => {
+                        match bson::from_bson::<String>(bson) {
+                            Ok(service_name) => {
                                 // Check permissions
                                 match Self::handle_auth_request(
                                     &service_name,
@@ -191,19 +197,6 @@ impl Logger {
                                         return Err(());
                                     }
                                 }
-                            }
-                            // Connection request instead of an Auth message
-                            Ok(m) => {
-                                warn!("Invalid registration message from a client: {m:?}");
-
-                                request
-                                    .respond::<()>(Err(Error::InternalError(format!(
-                                        "Invalid register message body: {m:?}"
-                                    ))))
-                                    .await;
-                                request.writer().flush().await;
-
-                                return Err(());
                             }
                             // Message deserialization error
                             Err(e) => {

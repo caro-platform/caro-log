@@ -18,6 +18,7 @@ pub struct SelfLogger {
 
 impl SelfLogger {
     pub fn new(level: LevelFilter, log_sender: Sender<LogEvent>) -> Self {
+        eprintln!("--------------->>");
         Self {
             pid: std::process::id() as unix::pid_t,
             service_name: LOGGER_SERVICE_NAME.into(),
