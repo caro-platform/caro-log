@@ -11,9 +11,7 @@ async fn test_stdout() {
             .unwrap(),
     );
 
-    log::set_boxed_logger(logger)
-        .map(|()| log::set_max_level(LevelFilter::Debug))
-        .unwrap();
+    tokio::spawn(logger.run());
 
     error!("Error message");
     warn!("Warning message");

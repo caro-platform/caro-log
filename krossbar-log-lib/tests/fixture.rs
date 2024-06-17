@@ -12,7 +12,8 @@ pub struct Fixture {
     socket_path: PathBuf,
     // Need this to keep temp dir from deletion
     _socket_dir: TempDir,
-    logs_dir: TempDir,
+    _logs_dir: TempDir,
+    log_file_path: PathBuf,
     cancel_token: CancellationToken,
 }
 
@@ -24,11 +25,13 @@ impl Fixture {
         let socket_path: PathBuf = socket_dir.path().join("krossbar_logger.socket");
 
         let logs_dir = TempDir::new("logs").expect("Failed to create tempdir");
+        let log_file_path = logs_dir.path().join("krossbar.log");
 
         let this = Self {
             socket_path,
             _socket_dir: socket_dir,
-            logs_dir,
+            _logs_dir: logs_dir,
+            log_file_path,
             cancel_token: CancellationToken::new(),
         };
 
@@ -41,9 +44,7 @@ impl Fixture {
             keep_num_files: 10,
             num_bytes_rotate: 1_000_000,
             log_location: self
-                .logs_dir
-                .path()
-                .join("krossbar.log")
+                .log_file_path
                 .to_owned()
                 .into_os_string()
                 .into_string()
@@ -67,6 +68,10 @@ impl Fixture {
 
     pub fn logger_socket_path(&self) -> &PathBuf {
         &self.socket_path
+    }
+
+    pub fn log_file_path(&self) -> &PathBuf {
+        &self.log_file_path
     }
 }
 
@@ -93,7 +98,5 @@ async fn init_client_logger(logger_sock: PathBuf) {
         .unwrap(),
     );
 
-    log::set_boxed_logger(logger)
-        .map(|()| log::set_max_level(LevelFilter::Debug))
-        .unwrap();
+    tokio::spawn(logger.run());
 }

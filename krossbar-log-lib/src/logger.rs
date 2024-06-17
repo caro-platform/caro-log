@@ -1,28 +1,45 @@
 use std::{
     io::{self, Write},
     path::PathBuf,
-    sync::Mutex,
+    sync::{
+        atomic::{AtomicBool, AtomicUsize, Ordering},
+        Arc,
+    },
     time::{Duration, SystemTime},
 };
 
 use chrono::Local;
 use colored::Colorize;
-use futures::{executor::block_on, select, FutureExt};
+use futures::{select, FutureExt};
 use log::{Level, LevelFilter, Log, Record};
-use tokio::{net::UnixStream, runtime::Handle};
+use tokio::{
+    net::UnixStream,
+    runtime::Handle,
+    sync::mpsc::{channel, Receiver, Sender},
+};
 
 use krossbar_common_rpc::{rpc::Rpc, Error, Result};
 use krossbar_log_common::{log_message::LogMessage, LOG_METHOD_NAME, REGISTER_METHOD_NAME};
 
 const RECONNECT_PERIOD: Duration = Duration::from_millis(1000);
+const LOG_BUFFER_SIZE: usize = 100;
 
 pub struct Logger {
     service_name: String,
-    level: LevelFilter,
-    rpc: Option<Mutex<Rpc>>,
-    log_to_stdout: bool,
+    rpc: Option<Rpc>,
     last_connect_ts_ms: SystemTime,
     logger_socket_path: Option<PathBuf>,
+    log_receiver: Receiver<LogMessage>,
+    _level: Arc<AtomicUsize>,
+    inside_log_context: Arc<AtomicBool>,
+}
+
+struct LogHandle {
+    log_to_stdout: bool,
+    log_to_rpc: bool,
+    level: Arc<AtomicUsize>,
+    log_sender: Sender<LogMessage>,
+    inside_log_context: Arc<AtomicBool>,
 }
 
 impl Logger {
@@ -32,22 +49,39 @@ impl Logger {
         log_to_stdout: bool,
         logger_socket_path: Option<PathBuf>,
     ) -> Result<Logger> {
+        let log_to_rpc = logger_socket_path.is_some();
+
         let rpc = if logger_socket_path.is_none() {
             None
         } else {
-            Some(Mutex::new(
-                Self::connect(&service_name, logger_socket_path.clone().unwrap()).await?,
-            ))
+            Some(Self::connect(&service_name, logger_socket_path.clone().unwrap()).await?)
         };
+
+        let (log_sender, log_receiver) = channel(LOG_BUFFER_SIZE);
+        let arc_level = Arc::new(AtomicUsize::new(level as usize));
+        let inside_log_context = Arc::new(AtomicBool::new(false));
 
         let this = Self {
             service_name: service_name.into(),
-            level,
+            _level: arc_level.clone(),
             rpc,
-            log_to_stdout,
             last_connect_ts_ms: SystemTime::now(),
             logger_socket_path: logger_socket_path,
+            log_receiver,
+            inside_log_context: inside_log_context.clone(),
         };
+
+        let log_handle = Box::new(LogHandle::new(
+            log_to_stdout,
+            log_to_rpc,
+            arc_level,
+            log_sender,
+            inside_log_context,
+        ));
+
+        log::set_boxed_logger(log_handle)
+            .map(|()| log::set_max_level(level))
+            .unwrap();
 
         Ok(this)
     }
@@ -70,6 +104,24 @@ impl Logger {
         Ok(rpc)
     }
 
+    pub async fn run(mut self) {
+        loop {
+            select! {
+                message = self.log_receiver.recv().fuse() => {
+                    if let Some(message) = message {
+                        self.send_rpc_message(&message).await
+                    } else {
+                        eprintln!("Log handle closed");
+                        break;
+                    }
+                }
+                incoming = self.rpc.as_mut().unwrap().poll().fuse() => {
+                    eprintln!("Incoming command: {incoming:?}")
+                }
+            };
+        }
+    }
+
     fn log_to_stdout(message: &LogMessage) {
         let colored_level = match message.level {
             Level::Error => "ERROR".bright_red(),
@@ -87,7 +139,7 @@ impl Logger {
         );
     }
 
-    async fn send_rpc_message(&self, log_message: &LogMessage) {
+    async fn send_rpc_message(&mut self, log_message: &LogMessage) {
         let internal_log_message = |message: String| -> LogMessage {
             LogMessage {
                 timestamp: Local::now(),
@@ -97,7 +149,9 @@ impl Logger {
             }
         };
 
-        let mut rpc = self.rpc.as_ref().unwrap().lock().unwrap();
+        let rpc = self.rpc.as_mut().unwrap();
+
+        self.inside_log_context.store(true, Ordering::Release);
 
         // Failed to send message to logger. Check if we already want to reconnect
         if rpc
@@ -136,12 +190,32 @@ impl Logger {
                 Self::log_to_stdout(&log_message)
             }
         }
+
+        self.inside_log_context.store(false, Ordering::Release);
     }
 }
 
-impl Log for Logger {
+impl LogHandle {
+    pub fn new(
+        log_to_stdout: bool,
+        log_to_rpc: bool,
+        level: Arc<AtomicUsize>,
+        log_sender: Sender<LogMessage>,
+        inside_log_context: Arc<AtomicBool>,
+    ) -> Self {
+        Self {
+            log_to_stdout,
+            level,
+            log_sender,
+            log_to_rpc,
+            inside_log_context,
+        }
+    }
+}
+
+impl Log for LogHandle {
     fn enabled(&self, metadata: &log::Metadata) -> bool {
-        metadata.level() <= self.level
+        metadata.level() as usize <= self.level.load(Ordering::Relaxed)
     }
 
     fn log(&self, record: &Record) {
@@ -153,24 +227,33 @@ impl Log for Logger {
                 message: format!("{}", record.args()),
             };
 
-            if self.log_to_stdout {
-                Self::log_to_stdout(&log_message)
+            let inside_log_context = self.inside_log_context.load(Ordering::Acquire);
+
+            if self.log_to_stdout || inside_log_context {
+                Logger::log_to_stdout(&log_message)
             }
 
-            if self.logger_socket_path.is_some() {
-                // Block if we're inside a Tokio context
+            if self.log_to_rpc && !inside_log_context {
+                // If we're inside Tokio runtime, we spawn a task. Otherwise we'll block to send
                 if let Ok(handle) = Handle::try_current() {
-                    handle.block_on(self.send_rpc_message(&log_message));
-                // Block otherwise
+                    let sender = self.log_sender.clone();
+
+                    handle.spawn(async move {
+                        if sender.send(log_message).await.is_err() {
+                            eprintln!("Failed to send log message into channel");
+                        }
+                    });
                 } else {
-                    block_on(self.send_rpc_message(&log_message));
+                    if self.log_sender.blocking_send(log_message).is_err() {
+                        eprintln!("Failed to send log message into channel");
+                    }
                 }
             }
         }
     }
 
     fn flush(&self) {
-        if self.log_to_stdout || self.rpc.is_none() {
+        if self.log_to_stdout {
             let _ = io::stdout().flush();
         }
     }
