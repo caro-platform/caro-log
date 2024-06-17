@@ -126,6 +126,7 @@ impl Logger {
         Ok(rpc)
     }
 
+    /// Run logger message sending. Can be ommited if set to log only to stdout.
     pub async fn run(mut self) {
         loop {
             select! {
