@@ -6,5 +6,5 @@ members = [
     "krossbar-log-lib",
     # "krossbar-log-control",
     "krossbar-log-common",
-    # "krossbar-log-viewer",
+    "krossbar-log-viewer",
 ]

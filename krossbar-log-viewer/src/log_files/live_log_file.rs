@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, path::PathBuf};
 
-use chrono::NaiveDateTime;
+use chrono::DateTime;
 
 use crate::log_files::{
     log_file_trait::{LogFile, ShiftDirection},
@@ -14,7 +14,10 @@ pub struct LiveLogFile {
 impl LiveLogFile {
     pub fn new(file_path: PathBuf) -> Self {
         Self {
-            inner: RotatedLogFile::new(file_path, NaiveDateTime::from_timestamp(0, 0)),
+            inner: RotatedLogFile::new(
+                file_path,
+                DateTime::from_timestamp(0, 0).unwrap().naive_local(),
+            ),
         }
     }
 }

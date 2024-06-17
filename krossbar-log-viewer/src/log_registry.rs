@@ -17,7 +17,7 @@ use crate::log_files::{
 /// Log files registry witch implements cross-file browsing
 pub struct LogRegistry {
     pub log_files: VecDeque<Box<dyn LogFile>>,
-    /// Currently visible window inside [log_files]
+    /// Currently visible window inside **log_files**
     pub current_window: (usize, usize),
 }
 

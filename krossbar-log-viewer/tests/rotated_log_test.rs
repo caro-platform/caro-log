@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, fs::OpenOptions, io::Write, path::Path};
 
-use chrono::NaiveDateTime;
+use chrono::DateTime;
 use krossbar_log_viewer::log_files::{
     log_file_trait::{LogFile, ShiftDirection},
     rotated_log_file::RotatedLogFile,
@@ -32,7 +32,9 @@ fn test_rotated_log() {
 
     let mut rotated = RotatedLogFile::new(
         log_file_path.to_path_buf(),
-        NaiveDateTime::from_timestamp(0, 42_000_000),
+        DateTime::from_timestamp(0, 42_000_000)
+            .unwrap()
+            .naive_local(),
     );
 
     assert_eq!(rotated.lines(), &VecDeque::from_iter([]));

@@ -1,17 +1,14 @@
 use std::io::{stdout, Stdout, Write};
 
-use termion::{
-    raw::{IntoRawMode, RawTerminal},
-    screen::{AlternateScreen, ToAlternateScreen, ToMainScreen},
-};
+use termion::screen::{AlternateScreen, IntoAlternateScreen, ToAlternateScreen, ToMainScreen};
 
 pub struct Screen {
-    alt_screen: AlternateScreen<RawTerminal<Stdout>>,
+    alt_screen: AlternateScreen<Stdout>,
 }
 
 impl Screen {
     pub fn new() -> Self {
-        let mut alt_screen = AlternateScreen::from(stdout().into_raw_mode().unwrap());
+        let mut alt_screen = stdout().into_alternate_screen().unwrap();
 
         if let Err(err) = write!(alt_screen, "{}{}", termion::cursor::Hide, ToAlternateScreen) {
             eprintln!("Failed to switch to alternate screen: {}", err.to_string());
@@ -51,7 +48,7 @@ impl Drop for Screen {
 }
 
 pub struct WriteHandle<'a> {
-    pub screen: &'a mut AlternateScreen<RawTerminal<Stdout>>,
+    pub screen: &'a mut AlternateScreen<Stdout>,
 }
 
 impl<'a> Write for WriteHandle<'a> {

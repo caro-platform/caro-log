@@ -5,7 +5,7 @@ use log::*;
 use crate::log_files::log_file_trait::ShiftDirection;
 
 /// Log file window.
-/// [start_cursor] and [end_cursor] always point to the beginning of the [lines]
+/// **start_cursor** and **end_cursor** always point to the beginning of the **lines**
 pub struct LogWindow {
     /// Cursor at the top of the window
     start_cursor: u64,
