@@ -18,8 +18,8 @@ use tokio::{
     sync::mpsc::{channel, Receiver, Sender},
 };
 
-use krossbar_common_rpc::{rpc::Rpc, Error, Result};
 use krossbar_log_common::{log_message::LogMessage, LOG_METHOD_NAME, REGISTER_METHOD_NAME};
+use krossbar_rpc::{rpc::Rpc, Error, Result};
 
 const RECONNECT_PERIOD: Duration = Duration::from_millis(1000);
 const LOG_BUFFER_SIZE: usize = 100;

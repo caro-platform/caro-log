@@ -23,13 +23,16 @@
 
 mod args;
 mod client;
+#[cfg(feature = "log-to-stdout")]
+pub mod log_macros;
 mod logger;
 mod rotator;
-#[cfg(not(feature = "disable-self-logger"))]
+#[cfg(not(feature = "log-to-stdout"))]
 mod self_logger;
 mod writer;
 
 use clap::Parser;
+#[cfg(not(feature = "log-to-stdout"))]
 use log::*;
 
 use krossbar_log_common::{log_message::LogMessage, DEFAULT_LOGGER_SOCKET_PATH};

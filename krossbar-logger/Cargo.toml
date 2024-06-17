@@ -1,6 +1,6 @@
 [package]
 name = "krossbar-logger"
-version = "0.5.1"
+version = "0.5.2"
 edition = "2021"
 rust-version = "1.75"
 authors = ["Alexander Smoktal <https://github.com/alexander-smoktal>"]
@@ -15,7 +15,8 @@ categories = ["development-tools"]
 keywords = ["log", "logging", "logger"]
 
 [features]
-disable-self-logger = []
+# Log to stdout for testing purposes
+log-to-stdout = ["krossbar-rpc/log-to-stdout"]
 
 [lib]
 name = "krossbar_logger_lib"
@@ -35,11 +36,11 @@ tokio = { version = "1.38", features = [
 ] }
 chrono = "0.4"
 
-krossbar-rpc = "0.5.5"
+krossbar-rpc = "0.5.6"
 krossbar-state-machine = "0.5.3"
 
 krossbar-log-common = "0.5.2"
 
 [dev-dependencies]
 tempdir = "0.3.7"
-tokio = { version = "1.38", features = ["fs", "signal"] }
+tokio = { version = "1.38", features = ["fs", "signal", "time"] }

@@ -11,6 +11,7 @@ use futures::{
 };
 
 use krossbar_log_common::REGISTER_METHOD_NAME;
+#[cfg(not(feature = "log-to-stdout"))]
 use log::{debug, info, warn};
 use tokio::{
     net::{
@@ -24,10 +25,12 @@ use krossbar_rpc::{request::RpcRequest, rpc::Rpc, writer::RpcWriter, Error, Resu
 use krossbar_state_machine::Machine;
 
 use crate::{args::Args, client::Client, writer::Writer, LogEvent};
+#[cfg(feature = "log-to-stdout")]
+use crate::{debug, info, warn};
 
-#[cfg(not(feature = "disable-self-logger"))]
+#[cfg(not(feature = "log-to-stdout"))]
 use crate::self_logger::SelfLogger;
-#[cfg(not(feature = "disable-self-logger"))]
+#[cfg(not(feature = "log-to-stdout"))]
 use log::set_boxed_logger;
 
 const CHANNEL_SIZE: usize = 100;
@@ -51,7 +54,7 @@ impl Logger {
 
         let (log_sender, log_receiver) = channel(CHANNEL_SIZE);
 
-        #[cfg(not(feature = "disable-self-logger"))]
+        #[cfg(not(feature = "log-to-stdout"))]
         set_boxed_logger(Box::new(SelfLogger::new(
             args.log_level,
             log_sender.clone(),
