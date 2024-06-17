@@ -17,6 +17,7 @@ keywords = ["log", "logging", "logger"]
 [dependencies]
 chrono = "0.4"
 clap = { version = "4.5", features = ["derive", "color"] }
+env_filter = "0.1"
 log = "0.4"
 palette = "0.7"
 regex = "1.10"
