@@ -21,28 +21,50 @@ use tokio::{
 use krossbar_log_common::{log_message::LogMessage, LOG_METHOD_NAME, REGISTER_METHOD_NAME};
 use krossbar_rpc::{rpc::Rpc, Error, Result};
 
+/// How often the library tries to reconnect to a logger
 const RECONNECT_PERIOD: Duration = Duration::from_millis(1000);
+/// How many message to store in a buffer
 const LOG_BUFFER_SIZE: usize = 100;
 
+/// Logger handle to use for running the logger
 pub struct Logger {
+    /// Client service name
     service_name: String,
+    /// Logger RPC handle
     rpc: Option<Rpc>,
+    /// Last sussessfull logger connection
     last_connect_ts_ms: SystemTime,
+    /// Logger socket path
     logger_socket_path: Option<PathBuf>,
+    /// Receiving part of log messages channel
     log_receiver: Receiver<LogMessage>,
+    /// Logging level
     _level: Arc<AtomicUsize>,
+    /// If logger is inside log context to avoid recursive logging
     inside_log_context: Arc<AtomicBool>,
 }
 
+/// Global [Log] handle
 struct LogHandle {
+    /// If log to stdout
     log_to_stdout: bool,
+    /// If send messages to the logger
     log_to_rpc: bool,
+    /// Logging level
     level: Arc<AtomicUsize>,
+    /// Sending part of the log messages channel
     log_sender: Sender<LogMessage>,
+    /// If inside log context to avoid recursive logging
     inside_log_context: Arc<AtomicBool>,
 }
 
 impl Logger {
+    /// Create Logging handle, which can be used to run logger message sending.
+    /// **service_name** is a client service name. It must be uniques across the system.
+    /// **log_to_stdout** sets if logger should log to stdout. If set, library
+    /// logs to stdout even if it then sends messages to the logger.
+    /// **logger_socket_path** sets logger path. If is some, logging lib tries to connect
+    /// to the logger at the provided path.
     pub async fn new(
         service_name: &str,
         level: LevelFilter,
@@ -86,7 +108,7 @@ impl Logger {
         Ok(this)
     }
 
-    pub async fn connect(service_name: &str, socket_path: PathBuf) -> Result<Rpc> {
+    async fn connect(service_name: &str, socket_path: PathBuf) -> Result<Rpc> {
         let socket = UnixStream::connect(socket_path)
             .await
             .map_err(|_| Error::PeerDisconnected)?;
