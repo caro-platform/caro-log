@@ -4,7 +4,7 @@ pub mod log_directory_reader;
 pub mod log_files;
 pub mod screen;
 
-use std::io::stdin;
+use std::{io::stdin, path::PathBuf, sync::mpsc, thread};
 
 use clap::{self, Parser};
 use krossbar_log_viewer::{
@@ -13,6 +13,7 @@ use krossbar_log_viewer::{
 use log::LevelFilter;
 
 use krossbar_log_common::DEFAULT_LOG_LOCATION;
+use notify::{Error, EventKind, RecursiveMode, Watcher};
 use screen::Screen;
 use termion::{event::Key, input::TermRead};
 
@@ -27,6 +28,10 @@ pub struct Args {
     /// Log files location
     #[clap(long, value_parser, default_value_t = DEFAULT_LOG_LOCATION.into())]
     pub log_location: String,
+
+    /// Output appended data as the file grows
+    #[clap(short, long, value_parser, default_value_t = false)]
+    pub follow: bool,
 }
 
 fn render(
@@ -41,24 +46,57 @@ fn render(
     registry.write_io(&mut screen.write(), colorizer);
 }
 
-fn main() {
-    let args = Args::parse();
+fn follow(args: Args, mut screen: Screen, mut registry: LogRegistry, mut colorizer: Colorizer) {
+    let (sender, receiver) = mpsc::channel();
 
-    let mut screen = Screen::new();
-    let mut registry = LogRegistry::new(&args.log_location);
-    let mut colorizer = Colorizer::new();
+    let mut watcher = notify::recommended_watcher(sender.clone()).unwrap();
 
-    render(
-        &mut screen,
-        &mut registry,
-        &mut colorizer,
-        ShiftDirection::Left,
-        0,
-    );
+    thread::spawn(move || {
+        let stdin = stdin();
 
-    for c in stdin().keys() {
+        for c in stdin.keys() {
+            match c.unwrap() {
+                Key::Char('q') | Key::Ctrl('c') => {
+                    sender.send(Err(Error::generic("Shutdown"))).unwrap();
+                    return;
+                }
+                _ => {}
+            }
+        }
+    });
+
+    watcher
+        .watch(
+            &PathBuf::from(&args.log_location),
+            RecursiveMode::NonRecursive,
+        )
+        .unwrap();
+
+    for event in receiver {
+        match event {
+            Ok(event) if matches!(event.kind, EventKind::Modify(_)) => {
+                let (_, h) = Screen::size();
+
+                render(
+                    &mut screen,
+                    &mut registry,
+                    &mut colorizer,
+                    ShiftDirection::Right,
+                    h as usize,
+                );
+            }
+            Ok(_) => {}
+            Err(_) => break,
+        }
+    }
+}
+
+fn interactive(mut screen: Screen, mut registry: LogRegistry, mut colorizer: Colorizer) {
+    let stdin = stdin();
+
+    for c in stdin.keys() {
         match c.unwrap() {
-            Key::Char('q') => break,
+            Key::Char('q') | Key::Ctrl('c') => break,
             Key::Up => {
                 render(
                     &mut screen,
@@ -99,5 +137,27 @@ fn main() {
             }
             _ => {}
         }
+    }
+}
+
+fn main() {
+    let args = Args::parse();
+
+    let mut screen = Screen::new();
+    let mut registry = LogRegistry::new(&args.log_location);
+    let mut colorizer = Colorizer::new();
+
+    render(
+        &mut screen,
+        &mut registry,
+        &mut colorizer,
+        ShiftDirection::Left,
+        0,
+    );
+
+    if args.follow {
+        follow(args, screen, registry, colorizer)
+    } else {
+        interactive(screen, registry, colorizer);
     }
 }

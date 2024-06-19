@@ -99,22 +99,27 @@ impl Colorizer {
         match level {
             "[ERROR]" => format!(
                 "{}[ERROR]{}",
-                color::Fg(color::Red),
+                color::Fg(color::LightRed),
                 color::Fg(color::Reset)
             ),
-            "[WARNING]" => format!(
-                "{}[WARNING]{}",
-                color::Fg(color::Yellow),
+            "[WARN]" => format!(
+                "{}[WARN]{}",
+                color::Fg(color::LightYellow),
                 color::Fg(color::Reset)
             ),
             "[INFO]" => format!(
                 "{}[INFO]{}",
-                color::Fg(color::Green),
+                color::Fg(color::LightGreen),
                 color::Fg(color::Reset)
             ),
             "[DEBUG]" => format!(
                 "{}[DEBUG]{}",
-                color::Fg(color::Blue),
+                color::Fg(color::LightBlue),
+                color::Fg(color::Reset)
+            ),
+            "[TRACE]" => format!(
+                "{}[TRACE]{}",
+                color::Fg(color::LightWhite),
                 color::Fg(color::Reset)
             ),
             s => format!(

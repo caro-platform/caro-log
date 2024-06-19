@@ -6,7 +6,7 @@ pub enum ShiftDirection {
     Right,
 }
 
-pub trait LogFile {
+pub trait LogFile: Send {
     /// Shift windows position and read enought lines to keep windown of **windows_size_lines** size
     /// **Returns** (lines in the window left, number of shifted lines)
     /// Number of shifted lines can be used when with shift viewport. In this case if the file goes
