@@ -191,6 +191,7 @@ impl Logger {
                     Self::log_to_stdout(&internal_log_message(
                         "Succesfully reconnected to a loger. Sending source message".into(),
                     ));
+                    self.last_connect_ts_ms = SystemTime::now();
 
                     rpc.replace_stream(new_rpc);
 

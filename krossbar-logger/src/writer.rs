@@ -83,6 +83,7 @@ impl Writer {
         self.close_log_file();
 
         let _rotate_file_path = self.rotator.rotate();
+        self.current_file_num_bytes = 0;
 
         self.open_log_file();
 
