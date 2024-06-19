@@ -1,5 +1,4 @@
 use futures::{channel::mpsc::Sender, SinkExt};
-#[cfg(not(feature = "log-to-stdout"))]
 use log::{trace, warn};
 use tokio::net::unix;
 
@@ -8,8 +7,6 @@ use krossbar_rpc::{rpc::Rpc, Error};
 use krossbar_log_common::{log_message::LogMessage, LOG_METHOD_NAME};
 
 use crate::LogEvent;
-#[cfg(feature = "log-to-stdout")]
-use crate::{trace, warn};
 
 pub struct Client {
     pid: unix::pid_t,

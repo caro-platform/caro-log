@@ -2,7 +2,7 @@ use std::{
     io::{self, Write},
     path::PathBuf,
     sync::{
-        atomic::{AtomicBool, AtomicUsize, Ordering},
+        atomic::{AtomicUsize, Ordering},
         Arc,
     },
     time::{Duration, SystemTime},
@@ -18,8 +18,10 @@ use tokio::{
     sync::mpsc::{channel, Receiver, Sender},
 };
 
-use krossbar_log_common::{log_message::LogMessage, LOG_METHOD_NAME, REGISTER_METHOD_NAME};
-use krossbar_rpc::{rpc::Rpc, Error, Result};
+use krossbar_common_rpc::{Error, Result, RpcData};
+use krossbar_log_common::{log_message::LogMessage, REGISTER_METHOD_NAME};
+
+use crate::rpc::Rpc;
 
 /// How often the library tries to reconnect to a logger
 const RECONNECT_PERIOD: Duration = Duration::from_millis(1000);
@@ -40,8 +42,6 @@ pub struct Logger {
     log_receiver: Receiver<LogMessage>,
     /// Logging level
     _level: Arc<AtomicUsize>,
-    /// If logger is inside log context to avoid recursive logging
-    inside_log_context: Arc<AtomicBool>,
 }
 
 /// Global [Log] handle
@@ -54,8 +54,6 @@ struct LogHandle {
     level: Arc<AtomicUsize>,
     /// Sending part of the log messages channel
     log_sender: Sender<LogMessage>,
-    /// If inside log context to avoid recursive logging
-    inside_log_context: Arc<AtomicBool>,
 }
 
 impl Logger {
@@ -81,7 +79,6 @@ impl Logger {
 
         let (log_sender, log_receiver) = channel(LOG_BUFFER_SIZE);
         let arc_level = Arc::new(AtomicUsize::new(level as usize));
-        let inside_log_context = Arc::new(AtomicBool::new(false));
 
         let this = Self {
             service_name: service_name.into(),
@@ -90,7 +87,6 @@ impl Logger {
             last_connect_ts_ms: SystemTime::now(),
             logger_socket_path: logger_socket_path,
             log_receiver,
-            inside_log_context: inside_log_context.clone(),
         };
 
         let log_handle = Box::new(LogHandle::new(
@@ -98,7 +94,6 @@ impl Logger {
             log_to_rpc,
             arc_level,
             log_sender,
-            inside_log_context,
         ));
 
         log::set_boxed_logger(log_handle)
@@ -108,20 +103,27 @@ impl Logger {
         Ok(this)
     }
 
-    async fn connect(service_name: &str, socket_path: PathBuf) -> Result<Rpc> {
+    pub async fn connect(service_name: &str, socket_path: PathBuf) -> Result<Rpc> {
+        eprintln!("YOBA: {socket_path:?} {}", socket_path.exists());
         let socket = UnixStream::connect(socket_path)
             .await
             .map_err(|_| Error::PeerDisconnected)?;
 
-        let mut rpc = Rpc::new(socket, "logger");
+        let mut rpc = Rpc::new(socket);
         let call = rpc
-            .call::<String, ()>(REGISTER_METHOD_NAME, &service_name.to_owned())
+            .call(REGISTER_METHOD_NAME, &service_name.to_owned())
             .await?;
 
-        select! {
-            call = call.fuse() => call?,
-            _ = rpc.poll().fuse() => {}
-        };
+        match call.data {
+            RpcData::Response(res) => {
+                res?;
+            }
+            m => {
+                return Err(Error::InternalError(format!(
+                    "Invalid response on connect from logger: {m:?}"
+                )));
+            }
+        }
 
         Ok(rpc)
     }
@@ -138,7 +140,7 @@ impl Logger {
                         break;
                     }
                 }
-                incoming = self.rpc.as_mut().unwrap().poll().fuse() => {
+                incoming = self.rpc.as_mut().unwrap().read_message().fuse() => {
                     eprintln!("Incoming command: {incoming:?}")
                 }
             };
@@ -174,14 +176,8 @@ impl Logger {
 
         let rpc = self.rpc.as_mut().unwrap();
 
-        self.inside_log_context.store(true, Ordering::Release);
-
         // Failed to send message to logger. Check if we already want to reconnect
-        if rpc
-            .send_message(LOG_METHOD_NAME, &log_message)
-            .await
-            .is_err()
-        {
+        if rpc.send_log(&log_message).await.is_err() {
             // We want to reconnect
             if (SystemTime::now() - RECONNECT_PERIOD) > self.last_connect_ts_ms {
                 Self::log_to_stdout(&internal_log_message(
@@ -197,9 +193,9 @@ impl Logger {
                         "Succesfully reconnected to a loger. Sending source message".into(),
                     ));
 
-                    rpc.on_reconnected(new_rpc).await;
+                    rpc.replace_stream(new_rpc);
 
-                    let _ = rpc.send_message(LOG_METHOD_NAME, &log_message).await;
+                    let _ = rpc.send_log(&log_message).await;
                 // Failed to reconnect
                 } else {
                     Self::log_to_stdout(&internal_log_message(
@@ -213,8 +209,6 @@ impl Logger {
                 Self::log_to_stdout(&log_message)
             }
         }
-
-        self.inside_log_context.store(false, Ordering::Release);
     }
 }
 
@@ -224,14 +218,12 @@ impl LogHandle {
         log_to_rpc: bool,
         level: Arc<AtomicUsize>,
         log_sender: Sender<LogMessage>,
-        inside_log_context: Arc<AtomicBool>,
     ) -> Self {
         Self {
             log_to_stdout,
             level,
             log_sender,
             log_to_rpc,
-            inside_log_context,
         }
     }
 }
@@ -250,13 +242,11 @@ impl Log for LogHandle {
                 message: format!("{}", record.args()),
             };
 
-            let inside_log_context = self.inside_log_context.load(Ordering::Acquire);
-
-            if self.log_to_stdout || inside_log_context {
+            if self.log_to_stdout {
                 Logger::log_to_stdout(&log_message)
             }
 
-            if self.log_to_rpc && !inside_log_context {
+            if self.log_to_rpc {
                 // If we're inside Tokio runtime, we spawn a task. Otherwise we'll block to send
                 if let Ok(handle) = Handle::try_current() {
                     let sender = self.log_sender.clone();

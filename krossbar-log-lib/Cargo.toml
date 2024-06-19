@@ -15,19 +15,22 @@ categories = ["development-tools"]
 keywords = ["log", "logging", "logger"]
 
 [dependencies]
+bson = "2.10"
 chrono = "0.4"
 colored = "2.1"
 futures = "0.3"
 log = { version = "0.4", features = ["std", "release_max_level_debug"] }
-tokio = { version = "1.38", features = ["net", "sync", "rt"] }
+serde = "1.0"
+tokio = { version = "1.38", features = ["net", "sync", "rt", "io-util"] }
 
-krossbar-rpc = "0.5.6"
+krossbar-common-rpc = { version = "0.5.6", features = ["impl-monitor"] }
 krossbar-log-common = "0.5.2"
 
 [dev-dependencies]
+fork = "0.1"
 rstest = "0.21"
 tempdir = "0.3.7"
 tokio = { version = "1.38", features = ["full"] }
 tokio-util = "0.7.11"
 
-krossbar-logger = { path = "../krossbar-logger", features = ["log-to-stdout"] }
+krossbar-logger = { path = "../krossbar-logger" }

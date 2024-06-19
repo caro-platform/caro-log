@@ -14,10 +14,6 @@ Krossbar logger
 categories = ["development-tools"]
 keywords = ["log", "logging", "logger"]
 
-[features]
-# Log to stdout for testing purposes
-log-to-stdout = ["krossbar-rpc/log-to-stdout"]
-
 [lib]
 name = "krossbar_logger_lib"
 path = "src/lib.rs"
