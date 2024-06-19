@@ -32,7 +32,7 @@ tokio = { version = "1.38", features = [
 ] }
 chrono = "0.4"
 
-krossbar-rpc = "0.5.6"
+krossbar-rpc = "0.5.7"
 krossbar-state-machine = "0.5.3"
 
 krossbar-log-common = "0.5.2"

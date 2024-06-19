@@ -7,7 +7,7 @@ use tokio::{
     net::UnixStream,
 };
 
-use krossbar_common_rpc::{Error, Result, RpcData, RpcMessage};
+use krossbar_rpc::{Error, Result, RpcData, RpcMessage};
 
 use krossbar_log_common::{log_message::LogMessage, LOG_METHOD_NAME};
 

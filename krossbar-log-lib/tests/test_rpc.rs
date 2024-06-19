@@ -10,6 +10,7 @@ use tokio::runtime::Runtime;
 
 #[rstest]
 fn test_simple_log(#[from(make_fixture)] fixture: Fixture) {
+    // Logger has it's own log, so we need to fork here to set client logger
     match fork() {
         Ok(Fork::Child) => {
             let rt = Runtime::new().unwrap();

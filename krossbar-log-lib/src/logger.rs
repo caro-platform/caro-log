@@ -18,8 +18,8 @@ use tokio::{
     sync::mpsc::{channel, Receiver, Sender},
 };
 
-use krossbar_common_rpc::{Error, Result, RpcData};
 use krossbar_log_common::{log_message::LogMessage, REGISTER_METHOD_NAME};
+use krossbar_rpc::{Error, Result, RpcData};
 
 use crate::rpc::Rpc;
 
@@ -104,7 +104,6 @@ impl Logger {
     }
 
     pub async fn connect(service_name: &str, socket_path: PathBuf) -> Result<Rpc> {
-        eprintln!("YOBA: {socket_path:?} {}", socket_path.exists());
         let socket = UnixStream::connect(socket_path)
             .await
             .map_err(|_| Error::PeerDisconnected)?;
