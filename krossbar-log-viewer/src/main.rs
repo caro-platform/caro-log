@@ -1,3 +1,25 @@
+//! A tool to view Krossbar logs.
+//!
+//! Although Krossbar logs are plain text files, the viewer sticks rotated
+//! log files allowing to watch whole log sequence, and highlights log messages
+//! section to simplify visual monitoring.
+//!
+//! There're two modes: viewing ready logs; and interactive mode to see logs
+//! as they appear. The interactive mode can be enables using **-f|--follow** CLI param.
+//!
+//! # Usage
+//! ```bash
+//! Usage: krossbar-log-viewer [OPTIONS]
+//!
+//! Options:
+//! -l, --log-level <LOG_LEVEL>        Log level: OFF, ERROR, WARN, INFO, DEBUG, TRACE [default: INFO]
+//!     --log-location <LOG_LOCATION>  Log files location [default: /var/log/krossbar/krossbar.log]
+//! -f, --follow                       Output appended data as the file grows
+//! -h, --help                         Print help
+//! -V, --version                      Print version
+//! ```
+//!
+
 pub mod colorizer;
 pub mod log_directory_entry;
 pub mod log_directory_reader;
@@ -46,6 +68,7 @@ fn render(
     registry.write_io(&mut screen.write(), colorizer);
 }
 
+// -f mode
 fn follow(args: Args, mut screen: Screen, mut registry: LogRegistry, mut colorizer: Colorizer) {
     let (sender, receiver) = mpsc::channel();
 
@@ -72,6 +95,9 @@ fn follow(args: Args, mut screen: Screen, mut registry: LogRegistry, mut coloriz
         )
         .unwrap();
 
+    // Note: we can't pass **screen** into **notify** watcher functions, as we
+    // restore main screen if [Screen] struct is dropped, so we definately
+    // have to call the destructor when exiting.
     for event in receiver {
         match event {
             Ok(event) if matches!(event.kind, EventKind::Modify(_)) => {

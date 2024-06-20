@@ -16,11 +16,17 @@ use crate::log_files::{
 // Chunk size which we read first and than split into lines
 const READ_CHUNK_SIZE_BYTES: u64 = 1_000;
 
+/// Rotated log file to show in generic mode
 pub struct RotatedLogFile {
+    /// Rotated file path
     file_path: PathBuf,
+    /// Time at whihc the file was rotated
     timestamp: NaiveDateTime,
+    /// Open file handle
     handle: Option<FsFile>,
+    /// File len in bytes
     file_len: u64,
+    /// Currently shown file section
     window: LogWindow,
 }
 

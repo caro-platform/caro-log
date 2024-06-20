@@ -8,6 +8,7 @@ pub enum LogFileType {
     Live,
 }
 
+/// Log files registry
 #[derive(Eq, PartialEq)]
 pub struct LogFileEntry {
     pub log_file_name: String,

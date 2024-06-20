@@ -103,7 +103,7 @@ impl Logger {
         Ok(this)
     }
 
-    pub async fn connect(service_name: &str, socket_path: PathBuf) -> Result<Rpc> {
+    async fn connect(service_name: &str, socket_path: PathBuf) -> Result<Rpc> {
         let socket = UnixStream::connect(socket_path)
             .await
             .map_err(|_| Error::PeerDisconnected)?;

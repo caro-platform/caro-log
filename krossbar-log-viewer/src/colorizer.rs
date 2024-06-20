@@ -6,6 +6,7 @@ use termion::color;
 const LIGHT_GREY: color::Rgb = color::Rgb(120, 120, 120);
 const ROTATION_ANGLE: f32 = 55.;
 
+/// Struct to colorize log lines
 pub struct Colorizer {
     service_colors: HashMap<String, color::Rgb>,
     color_rotator: f32,

@@ -5,6 +5,7 @@ use termion::{
     screen::{AlternateScreen, IntoAlternateScreen, ToAlternateScreen, ToMainScreen},
 };
 
+/// Screen to display logs. Uses Termion alt screen to act as an app
 pub struct Screen {
     alt_screen: AlternateScreen<RawTerminal<Stdout>>,
 }
@@ -48,6 +49,7 @@ impl Screen {
     }
 }
 
+/// Drop implementation, which restores primary TTY if exited
 impl Drop for Screen {
     fn drop(&mut self) {
         let _ = write!(self.alt_screen, "{}{}", ToMainScreen, termion::cursor::Show);

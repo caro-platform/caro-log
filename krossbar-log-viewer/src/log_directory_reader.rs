@@ -7,6 +7,7 @@ use regex::Regex;
 
 use crate::log_directory_entry::{LogFileEntry, LogFileType};
 
+/// Struct to read log directory and identify log files
 pub struct DirectoryReader;
 
 impl DirectoryReader {
