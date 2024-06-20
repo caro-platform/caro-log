@@ -14,6 +14,10 @@ Krossbar logger
 categories = ["development-tools"]
 keywords = ["log", "logging", "logger"]
 
+[features]
+default = ["logger-service"]
+logger-service = []
+
 [lib]
 name = "krossbar_logger_lib"
 path = "src/lib.rs"
@@ -32,10 +36,11 @@ tokio = { version = "1.38", features = [
 ] }
 chrono = "0.4"
 
+krossbar-bus-lib = "0.5.7"
+krossbar-bus-common = "0.5.0"
+krossbar-log-common = { version = "0.5.2", path = "../krossbar-log-common" }
 krossbar-rpc = "0.5.7"
 krossbar-state-machine = "0.5.3"
-
-krossbar-log-common = "0.5.2"
 
 [dev-dependencies]
 tempdir = "0.3.7"

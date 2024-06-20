@@ -5,7 +5,7 @@ use futures::{channel::mpsc::Sender, executor::block_on, SinkExt};
 use log::{LevelFilter, Metadata, Record};
 use tokio::net::unix;
 
-use krossbar_log_common::{log_message::LogMessage, LOGGER_SERVICE_NAME};
+use krossbar_log_common::{log_message::LogMessage, logger_interface::LOGGER_SERVICE_NAME};
 
 use crate::LogEvent;
 

@@ -47,7 +47,7 @@ impl Writer {
         self.log_file = None;
     }
 
-    pub fn log_message(&mut self, message: LogEvent) {
+    pub fn log_message(&mut self, message: LogEvent) -> Option<String> {
         let log_line = format!(
             "<{}> {}#{} [{}] {} > {}\n",
             message.message.timestamp.format("%d-%m-%Y %H:%M:%S%.3f"),
@@ -75,18 +75,18 @@ impl Writer {
         self.check_rotate()
     }
 
-    fn check_rotate(&mut self) {
+    fn check_rotate(&mut self) -> Option<String> {
         if self.current_file_num_bytes < self.max_file_len {
-            return;
+            return None;
         }
 
         self.close_log_file();
 
-        let _rotate_file_path = self.rotator.rotate();
+        let rotate_file_path = self.rotator.rotate();
         self.current_file_num_bytes = 0;
 
         self.open_log_file();
 
-        // self.rotated_sigal.emit(rotate_file_path);
+        Some(rotate_file_path)
     }
 }

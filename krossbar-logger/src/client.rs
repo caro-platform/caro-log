@@ -4,7 +4,7 @@ use tokio::net::unix;
 
 use krossbar_rpc::{rpc::Rpc, Error};
 
-use krossbar_log_common::{log_message::LogMessage, LOG_METHOD_NAME};
+use krossbar_log_common::{log_message::LogMessage, logger_interface::LOG_METHOD_NAME};
 
 use crate::LogEvent;
 

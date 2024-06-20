@@ -26,6 +26,7 @@ mod client;
 mod logger;
 mod rotator;
 mod self_logger;
+mod service;
 mod writer;
 
 use clap::Parser;

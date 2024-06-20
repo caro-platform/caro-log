@@ -5,6 +5,7 @@ pub mod args;
 mod client;
 pub mod logger;
 pub mod rotator;
+mod service;
 mod self_logger;
 mod writer;
 

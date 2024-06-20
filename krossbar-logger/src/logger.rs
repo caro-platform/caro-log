@@ -10,7 +10,7 @@ use futures::{
     Future, StreamExt as _,
 };
 
-use krossbar_log_common::REGISTER_METHOD_NAME;
+use krossbar_log_common::logger_interface::REGISTER_METHOD_NAME;
 use log::{debug, info, warn};
 use tokio::{
     net::{
@@ -23,7 +23,7 @@ use tokio::{
 use krossbar_rpc::{request::RpcRequest, rpc::Rpc, writer::RpcWriter, Error, Result};
 use krossbar_state_machine::Machine;
 
-use crate::{args::Args, client::Client, writer::Writer, LogEvent};
+use crate::{args::Args, client::Client, service::LoggerService, writer::Writer, LogEvent};
 
 use crate::self_logger::SelfLogger;
 use log::set_boxed_logger;
@@ -40,6 +40,7 @@ pub struct Logger {
     log_receiver: Receiver<LogEvent>,
     log_sender: Sender<LogEvent>,
     writer: Writer,
+    service: LoggerService,
 }
 
 impl Logger {
@@ -56,13 +57,16 @@ impl Logger {
         .map(|()| log::set_max_level(args.log_level))
         .unwrap();
 
+        let clients = Arc::new(Mutex::new(HashMap::new()));
+
         Self {
             tasks,
             socket_path,
-            clients: Arc::new(Mutex::new(HashMap::new())),
+            clients: clients.clone(),
             log_receiver,
             log_sender,
             writer: Writer::new(&args),
+            service: LoggerService::new(clients),
         }
     }
 
@@ -130,10 +134,13 @@ impl Logger {
                     },
                     log_message = self.log_receiver.next() => {
                         match log_message {
-                            Some(message) => self.writer.log_message(message),
+                            Some(message) => {if let Some(rotated_file) = self.writer.log_message(message) {
+                                self.service.on_rotated(&rotated_file).await
+                            }},
                             _ => warn!("Failed to receive log message through the channel")
                         }
                     },
+                    _ = self.service.run() => {}
                     _ = tokio::signal::ctrl_c().fuse() => return
                 }
             }
