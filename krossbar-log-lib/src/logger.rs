@@ -18,7 +18,7 @@ use tokio::{
     sync::mpsc::{channel, Receiver, Sender},
 };
 
-use krossbar_log_common::{log_message::LogMessage, REGISTER_METHOD_NAME};
+use krossbar_log_common::{log_message::LogMessage, logger_interface::REGISTER_METHOD_NAME};
 use krossbar_rpc::{Error, Result, RpcData};
 
 use crate::rpc::Rpc;

@@ -9,7 +9,7 @@ use tokio::{
 
 use krossbar_rpc::{Error, Result, RpcData, RpcMessage};
 
-use krossbar_log_common::{log_message::LogMessage, LOG_METHOD_NAME};
+use krossbar_log_common::{log_message::LogMessage, logger_interface::LOG_METHOD_NAME};
 
 pub struct Rpc {
     stream: UnixStream,

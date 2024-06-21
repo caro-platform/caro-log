@@ -1,12 +1,14 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use clap::{self, Parser, Subcommand};
 use krossbar_bus_common::DEFAULT_HUB_SOCKET_PATH;
 use krossbar_bus_lib::Service;
-use log::*;
 
 use krossbar_log_common::{
-    LOGGER_SERVICE_NAME, LOG_CONTROL_SERVICE_NAME, SET_LOG_LEVEL_METHOD_NAME,
+    logger_interface::{
+        SetLogLevel, LOGGER_SERVICE_NAME, LOG_CLIENTS_METHOD_NAME, SET_LOG_LEVEL_METHOD_NAME,
+    },
+    LOG_CONTROL_SERVICE_NAME,
 };
 
 #[derive(Subcommand, Debug, Clone)]
@@ -19,14 +21,14 @@ enum Commands {
         service_name: String,
         /// Log level: OFF, ERROR, WARN, INFO, DEBUG, TRACE
         #[clap(short, long, value_parser)]
-        log_level: log::LevelFilter,
+        level: log::LevelFilter,
     },
 }
 
 /// Krossbar log control
 #[derive(Parser, Debug, Clone)]
 #[clap(version, about, long_about = None)]
-pub struct Args {
+struct Args {
     /// Log level: OFF, ERROR, WARN, INFO, DEBUG, TRACE
     #[clap(short, long, value_parser)]
     pub log_level: log::LevelFilter,
@@ -49,23 +51,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let client = bus.connect(LOGGER_SERVICE_NAME).await.unwrap();
 
-    // match args.command {
-    //     Commands::List => {
-    //         let clients: Vec<String> = client.call(LOG_CLIENTS_METHOD_NAME, params)
-    //     }
-    // }
+    match args.command {
+        Commands::List => {
+            let clients: Vec<String> = client.get(LOG_CLIENTS_METHOD_NAME).await.unwrap();
+            println!("Logger clients: {clients:?}");
+        }
+        Commands::SetLogLevel {
+            service_name,
+            level,
+        } => {
+            client
+                .message(
+                    SET_LOG_LEVEL_METHOD_NAME,
+                    &SetLogLevel {
+                        service_name: service_name.clone(),
+                        level,
+                    },
+                )
+                .await
+                .unwrap();
 
-    // debug!(
-    //     "Changing service '{}' log level to {}",
-    //     args.service_name, args.log_level
-    // );
-
-    // client
-    //     .call::<LevelFilter, ()>(SET_LOG_LEVEL_METHOD_NAME, &args.log_level)
-    //     .await
-    //     .unwrap();
-
-    // debug!("Succesfully set log level");
+            println!("Succesfully changed log {service_name} log level to {level}");
+        }
+    }
 
     Ok(())
 }

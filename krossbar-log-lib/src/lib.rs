@@ -20,12 +20,11 @@
 //! use std::time::Duration;
 //!
 //! use log::*;
-//!
-//! use krossbar_log_lib::init_logger;
 //! use tokio::select;
 //!
-//! #[tokio::main]
-//! async fn main() {
+//! use krossbar_log_lib::init_logger;
+//!
+//! async fn log_example() {
 //!     let logger = init_logger("com.examples.logging", LevelFilter::Trace, true).await;
 //!
 //!     tokio::spawn(logger.run());

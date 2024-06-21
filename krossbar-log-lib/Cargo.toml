@@ -1,6 +1,6 @@
 [package]
 name = "krossbar-log-lib"
-version = "0.5.3"
+version = "0.5.5"
 edition = "2021"
 rust-version = "1.75"
 authors = ["Alexander Smoktal <https://github.com/alexander-smoktal>"]
@@ -24,7 +24,7 @@ serde = "1.0"
 tokio = { version = "1.38", features = ["net", "sync", "rt", "io-util"] }
 
 krossbar-rpc = { version = "0.5.7", features = ["impl-monitor"] }
-krossbar-log-common = "0.5.2"
+krossbar-log-common = "0.5.3"
 
 [dev-dependencies]
 fork = "0.1"
