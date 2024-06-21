@@ -23,10 +23,10 @@ The library uses Unix stream connection to send logging messages, which means yo
 running [Krossbar logger](https://crates.io/crates/krossbar-logger) to log mesage.
 In case service can't connect to the logger, it logs to stdout.
 
-Also, you can use [Logger] manually to control whether log into stdout or send
+Also, you can use [Logger](https://docs.rs/krossbar-log-lib/latest/krossbar_log_lib/logger/struct.Logger.html) manually to control whether log into stdout or send
 message to the logger. Both option are independent.
 
-In case you use Krossbar logger, you have to run logging loop using [Logger::run].
+In case you use Krossbar logger, you have to run logging loop using [Logger::run](https://docs.rs/krossbar-log-lib/latest/krossbar_log_lib/logger/struct.Logger.html#method.run).
 
 ## Examples
 ```rust

@@ -18,7 +18,6 @@
 //! -h, --help                         Print help
 //! -V, --version                      Print version
 //! ```
-//!
 
 pub mod colorizer;
 pub mod log_directory_entry;

@@ -11,4 +11,23 @@
 
 # krossbar-log-viewer
 
+A tool to view Krossbar logs.
 
+Although Krossbar logs are plain text files, the viewer sticks rotated
+log files allowing to watch whole log sequence, and highlights log messages
+section to simplify visual monitoring.
+
+There're two modes: viewing ready logs; and interactive mode to see logs
+as they appear. The interactive mode can be enables using **-f|--follow** CLI param.
+
+## Usage
+```bash
+Usage: krossbar-log-viewer [OPTIONS]
+
+Options:
+-l, --log-level <LOG_LEVEL>        Log level: OFF, ERROR, WARN, INFO, DEBUG, TRACE [default: INFO]
+    --log-location <LOG_LOCATION>  Log files location [default: /var/log/krossbar/krossbar.log]
+-f, --follow                       Output appended data as the file grows
+-h, --help                         Print help
+-V, --version                      Print version
+```
