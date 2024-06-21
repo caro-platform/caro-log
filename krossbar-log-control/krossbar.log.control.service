@@ -1,0 +1,4 @@
+{
+    "exec": "/usr/local/bin/krossbar-log-control",
+    "incoming_connections": []
+}

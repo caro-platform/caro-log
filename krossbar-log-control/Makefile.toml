@@ -30,11 +30,17 @@ args = ["."]
 [tasks.install]
 workspace = false
 command = "../scripts/install.sh"
-args = ["-b", "krossbar-log-control"]
+args = ["-b", "krossbar-log-control", "-s", "krossbar.log.control.service"]
 dependencies = ["build"]
 
 [tasks.install-release]
 workspace = false
 command = "../scripts/install.sh"
-args = ["--release", "-b", "krossbar-log-control"]
+args = [
+    "--release",
+    "-b",
+    "krossbar-log-control",
+    "-s",
+    "krossbar.log.control.service",
+]
 dependencies = ["build-release"]

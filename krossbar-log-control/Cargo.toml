@@ -16,6 +16,7 @@ keywords = ["log", "logging", "logger"]
 
 [dependencies]
 clap = { version = "3.2", features = ["derive", "color"] }
+env_filter = "0.1"
 tokio = { version = "1.20", features = ["macros", "rt"] }
 log = "0.4"
 
