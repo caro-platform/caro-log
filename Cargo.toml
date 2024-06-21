@@ -4,7 +4,7 @@ resolver = "2"
 members = [
     "krossbar-logger",
     "krossbar-log-lib",
-    # "krossbar-log-control",
+    "krossbar-log-control",
     "krossbar-log-common",
     "krossbar-log-viewer",
 ]
