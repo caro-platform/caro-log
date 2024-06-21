@@ -9,6 +9,7 @@ use krossbar_log_common::logger_interface::{
     SET_LOG_LEVEL_METHOD_NAME,
 };
 use krossbar_rpc::writer::RpcWriter;
+use log::debug;
 
 type ClientRegistryType = Arc<Mutex<HashMap<String, RpcWriter>>>;
 
@@ -49,6 +50,8 @@ impl LoggerService {
     }
 
     async fn connect(&mut self) -> ServiceEndpoints {
+        debug!("Connecting logger service");
+
         let mut service = Service::new(LOGGER_SERVICE_NAME, Path::new(DEFAULT_HUB_SOCKET_PATH))
             .await
             .unwrap();

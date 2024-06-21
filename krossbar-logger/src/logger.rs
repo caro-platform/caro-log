@@ -72,14 +72,14 @@ impl Logger {
 
     /// Hub main loop
     pub async fn run(mut self) {
-        info!("Logger socket path: {:?}", self.socket_path);
+        println!("Logger socket path: {:?}", self.socket_path);
 
         // Remove hanging socket if present
         let _ = std::fs::remove_file(&self.socket_path);
 
         let listener = UnixListener::bind(&self.socket_path).unwrap();
 
-        info!("Logger started listening for new connections");
+        println!("Logger started listening for new connections");
 
         // Update permissions to be accessible for th eclient
         let socket_permissions = fs::Permissions::from_mode(0o666);
