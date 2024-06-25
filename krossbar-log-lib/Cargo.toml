@@ -1,36 +1,37 @@
 [package]
 name = "krossbar-log-lib"
 version = "0.5.5"
-edition = "2021"
-rust-version = "1.75"
-authors = ["Alexander Smoktal <https://github.com/alexander-smoktal>"]
-license = "MIT"
 readme = "README.md"
-repository = "https://github.com/krossbar-platform/krossbar-log"
-homepage = "https://krossbar.rs"
 description = """
 Krossbar log lib
 """
 categories = ["development-tools"]
 keywords = ["log", "logging", "logger"]
 
-[dependencies]
-bson = "2.10"
-chrono = "0.4"
-colored = "2.1"
-futures = "0.3"
-log = { version = "0.4", features = ["std", "release_max_level_debug"] }
-serde = "1.0"
-tokio = { version = "1.38", features = ["net", "sync", "rt", "io-util"] }
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
 
-krossbar-rpc = { version = "0.5.7", features = ["impl-monitor"] }
-krossbar-log-common = "0.5.3"
+[dependencies]
+bson = { workspace = true }
+chrono = { workspace = true }
+colored = { workspace = true }
+futures = { workspace = true }
+log = { workspace = true, features = ["std", "release_max_level_debug"] }
+serde = { workspace = true }
+tokio = { workspace = true, features = ["net", "sync", "rt", "io-util"] }
+
+krossbar-rpc = { workspace = true, features = ["impl-monitor"] }
+krossbar-log-common = { workspace = true }
 
 [dev-dependencies]
 fork = "0.1"
-rstest = "0.21"
-tempdir = "0.3.7"
-tokio = { version = "1.38", features = ["full"] }
-tokio-util = "0.7.11"
+rstest = { workspace = true }
+tempdir = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-util = { workspace = true }
 
 krossbar-logger = { path = "../krossbar-logger" }

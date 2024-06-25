@@ -1,25 +1,26 @@
 [package]
 name = "krossbar-log-control"
 version = "0.5.0"
-edition = "2021"
-rust-version = "1.75"
-authors = ["Alexander Smoktal <https://github.com/alexander-smoktal>"]
-license = "MIT"
 readme = "README.md"
-repository = "https://github.com/krossbar-platform/krossbar-log"
-homepage = "https://krossbar.rs"
 description = """
 Krossbar log control tool
 """
 categories = ["development-tools"]
 keywords = ["log", "logging", "logger"]
 
-[dependencies]
-clap = { version = "3.2", features = ["derive", "color"] }
-env_filter = "0.1"
-tokio = { version = "1.20", features = ["macros", "rt"] }
-log = "0.4"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
 
-krossbar-bus-lib = "0.5.7"
-krossbar-bus-common = "0.5.0"
-krossbar-log-common = "0.5.3"
+[dependencies]
+clap = { workspace = true, features = ["derive", "color"] }
+env_filter = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt"] }
+log = { workspace = true }
+
+krossbar-bus-lib = { workspace = true }
+krossbar-bus-common = { workspace = true }
+krossbar-log-common = { workspace = true }

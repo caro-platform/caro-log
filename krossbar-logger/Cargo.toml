@@ -1,18 +1,19 @@
 [package]
 name = "krossbar-logger"
 version = "0.5.4"
-edition = "2021"
-rust-version = "1.75"
-authors = ["Alexander Smoktal <https://github.com/alexander-smoktal>"]
-license = "MIT"
 readme = "README.md"
-repository = "https://github.com/krossbar-platform/krossbar-log"
-homepage = "https://krossbar.rs"
 description = """
 Krossbar logger
 """
 categories = ["development-tools"]
 keywords = ["log", "logging", "logger"]
+
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
 
 [features]
 default = ["logger-service"]
@@ -23,25 +24,25 @@ name = "krossbar_logger_lib"
 path = "src/lib.rs"
 
 [dependencies]
-bson = "2.10"
-clap = { version = "4.5", features = ["derive", "color"] }
-futures = "0.3.30"
-log = { version = "0.4", features = ["std"] }
-env_filter = "0.1"
-tokio = { version = "1.38", features = [
+bson = { workspace = true }
+clap = { workspace = true, features = ["derive", "color"] }
+futures = { workspace = true }
+log = { workspace = true, features = ["std"] }
+env_filter = { workspace = true }
+tokio = { workspace = true, features = [
     "macros",
     "rt-multi-thread",
     "fs",
     "signal",
 ] }
-chrono = "0.4"
+chrono = { workspace = true }
 
-krossbar-bus-lib = "0.5.7"
-krossbar-bus-common = "0.5.0"
-krossbar-log-common = "0.5.3"
-krossbar-rpc = "0.5.7"
+krossbar-bus-lib = { workspace = true }
+krossbar-bus-common = { workspace = true }
+krossbar-log-common = { workspace = true }
+krossbar-rpc = { workspace = true }
 krossbar-state-machine = "0.5.3"
 
 [dev-dependencies]
-tempdir = "0.3.7"
-tokio = { version = "1.38", features = ["fs", "signal", "time"] }
+tempdir = { workspace = true }
+tokio = { workspace = true, features = ["fs", "signal", "time"] }
