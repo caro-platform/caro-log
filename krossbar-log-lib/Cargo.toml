@@ -22,7 +22,13 @@ colored = { workspace = true }
 futures = { workspace = true }
 log = { workspace = true, features = ["std", "release_max_level_debug"] }
 serde = { workspace = true }
-tokio = { workspace = true, features = ["net", "sync", "rt", "io-util"] }
+tokio = { workspace = true, features = [
+    "net",
+    "sync",
+    "rt",
+    "io-util",
+    "time",
+] }
 
 krossbar-rpc = { workspace = true, features = ["impl-monitor"] }
 krossbar-log-common = { workspace = true }
