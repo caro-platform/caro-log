@@ -7,11 +7,11 @@ use futures::{
     future::{pending, FutureExt as _},
     lock::Mutex,
     stream::FuturesUnordered,
-    Future, StreamExt as _,
+    Future, SinkExt, StreamExt as _,
 };
 
 use krossbar_log_common::logger_interface::REGISTER_METHOD_NAME;
-use log::{debug, info, warn};
+use log::{debug, error, info, warn};
 use tokio::{
     net::{
         unix::{self, UCred},
@@ -33,6 +33,10 @@ const CHANNEL_SIZE: usize = 100;
 type TasksMapType = FuturesUnordered<Pin<Box<dyn Future<Output = Option<String>> + Send>>>;
 type ClientRegistryType = Arc<Mutex<HashMap<String, RpcWriter>>>;
 
+pub enum Event {
+    Rotated(String),
+}
+
 pub struct Logger {
     tasks: TasksMapType,
     socket_path: PathBuf,
@@ -40,7 +44,6 @@ pub struct Logger {
     log_receiver: Receiver<LogEvent>,
     log_sender: Sender<LogEvent>,
     writer: Writer,
-    service: LoggerService,
 }
 
 impl Logger {
@@ -66,7 +69,6 @@ impl Logger {
             log_receiver,
             log_sender,
             writer: Writer::new(&args),
-            service: LoggerService::new(clients),
         }
     }
 
@@ -84,6 +86,10 @@ impl Logger {
         // Update permissions to be accessible for th eclient
         let socket_permissions = fs::Permissions::from_mode(0o666);
         fs::set_permissions(&self.socket_path, socket_permissions).unwrap();
+
+        let (mut event_sender, event_receiver) = channel(CHANNEL_SIZE);
+
+        LoggerService::run(self.clients.clone(), event_receiver).await;
 
         async move {
             loop {
@@ -135,12 +141,13 @@ impl Logger {
                     log_message = self.log_receiver.next() => {
                         match log_message {
                             Some(message) => {if let Some(rotated_file) = self.writer.log_message(message) {
-                                self.service.on_rotated(&rotated_file).await
+                                if event_sender.send(Event::Rotated(rotated_file)).await.is_err() {
+                                    error!("Event channel receiver is closed");
+                                }
                             }},
                             _ => warn!("Failed to receive log message through the channel")
                         }
                     },
-                    _ = self.service.run() => {}
                     _ = tokio::signal::ctrl_c().fuse() => return
                 }
             }

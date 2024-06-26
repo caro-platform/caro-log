@@ -11,7 +11,7 @@ use std::{
 use chrono::Local;
 use colored::Colorize;
 use futures::{select, FutureExt};
-use log::{Level, LevelFilter, Log, Record};
+use log::{warn, Level, LevelFilter, Log, Record};
 use tokio::{
     net::UnixStream,
     runtime::Handle,
@@ -140,7 +140,13 @@ impl Logger {
                     }
                 }
                 incoming = self.rpc.as_mut().unwrap().read_message().fuse() => {
-                    eprintln!("Incoming command: {incoming:?}")
+                    eprintln!("Incoming command: {incoming:?}");
+
+                    if let Err(e) = incoming {
+                        warn!("No logger connection logger: {e:?}");
+
+                        tokio::time::sleep(RECONNECT_PERIOD).await;
+                    }
                 }
             };
         }
@@ -183,6 +189,9 @@ impl Logger {
                     "Logger is down. Trying to reconnect".into(),
                 ));
 
+                // Update last reconnect time, so we don't retry too often
+                self.last_connect_ts_ms = SystemTime::now();
+
                 // Succesfully reconnected
                 if let Ok(new_rpc) =
                     Self::connect(&self.service_name, self.logger_socket_path.clone().unwrap())
@@ -191,7 +200,6 @@ impl Logger {
                     Self::log_to_stdout(&internal_log_message(
                         "Succesfully reconnected to a loger. Sending source message".into(),
                     ));
-                    self.last_connect_ts_ms = SystemTime::now();
 
                     rpc.replace_stream(new_rpc);
 
