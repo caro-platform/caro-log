@@ -140,7 +140,9 @@ impl Logger {
                     },
                     log_message = self.log_receiver.next() => {
                         match log_message {
-                            Some(message) => {if let Some(rotated_file) = self.writer.log_message(message) {
+                            Some(message) => {
+                                if let Some(rotated_file) = self.writer.log_message(message) {
+
                                 if event_sender.send(Event::Rotated(rotated_file)).await.is_err() {
                                     error!("Event channel receiver is closed");
                                 }

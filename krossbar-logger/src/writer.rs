@@ -18,6 +18,8 @@ pub struct Writer {
 
 impl Writer {
     pub fn new(args: &args::Args) -> Self {
+        println!("Log file location: {:?}", args.log_location);
+
         let mut this = Self {
             log_file: None,
             log_location: PathBuf::from(&args.log_location),
@@ -33,7 +35,7 @@ impl Writer {
     fn open_log_file(&mut self) {
         self.log_file = Some(
             OpenOptions::new()
-                .write(true)
+                .append(true)
                 .create(true)
                 .open(&self.log_location)
                 .expect(&format!(
@@ -63,7 +65,7 @@ impl Writer {
 
         match self.log_file {
             Some(ref mut log_file) => {
-                if let Err(err) = log_file.write(log_line.as_bytes()) {
+                if let Err(err) = log_file.write_all(log_line.as_bytes()) {
                     eprintln!("Failed to write log message: {}", err.to_string())
                 }
             }
