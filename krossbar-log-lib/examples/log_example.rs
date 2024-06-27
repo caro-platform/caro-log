@@ -13,11 +13,30 @@ async fn main() {
 
     loop {
         error!("Error message");
-        warn!("Warning message");
-        info!("Info message");
-        debug!("Debug message");
-        trace!("Trace message");
+        select! {
+            _ = tokio::time::sleep(Duration::from_secs(1)) => {},
+            _ = tokio::signal::ctrl_c() => { return; }
+        }
 
+        warn!("Warning message");
+        select! {
+            _ = tokio::time::sleep(Duration::from_secs(1)) => {},
+            _ = tokio::signal::ctrl_c() => { return; }
+        }
+
+        info!("Info message");
+        select! {
+            _ = tokio::time::sleep(Duration::from_secs(1)) => {},
+            _ = tokio::signal::ctrl_c() => { return; }
+        }
+
+        debug!("Debug message");
+        select! {
+            _ = tokio::time::sleep(Duration::from_secs(1)) => {},
+            _ = tokio::signal::ctrl_c() => { return; }
+        }
+
+        trace!("Trace message");
         select! {
             _ = tokio::time::sleep(Duration::from_secs(1)) => {},
             _ = tokio::signal::ctrl_c() => { return; }
